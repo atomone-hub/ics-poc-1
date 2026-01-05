@@ -2,6 +2,11 @@ module github.com/atomone-hub/ics-poc-1
 
 go 1.25.4
 
+replace (
+	github.com/cometbft/cometbft => github.com/atomone-hub/cometbft v0.0.0-20251216151559-a24cfa28b916
+	github.com/cosmos/cosmos-sdk => github.com/atomone-hub/cosmos-sdk v0.50.14-atomone.1.0.20251218081418-6bc16437bcdb
+)
+
 tool github.com/golangci/golangci-lint/cmd/golangci-lint
 
 require (
