@@ -48,7 +48,7 @@ const (
 type ChainHandler struct {
 	ChainID string
 	conn    *grpc.ClientConn
-	app     *RemoteABCIClientV2
+	app     *RemoteABCIClient
 }
 
 // Multiplexer implements ABCI Application interface and routes requests to multiple chain applications
@@ -209,15 +209,6 @@ func (m *Multiplexer) initRemoteGrpcConn(chainInfo config.ChainInfo) (*grpc.Clie
 
 	m.logger.Info("initialized remote app client", "address", abciServerAddr, "chain_id", chainInfo.ChainID)
 	return conn, nil
-}
-
-// getConsumerHandler returns the handler for a chain ID
-func (m *Multiplexer) getConsumerHandler(chainID string) (*ChainHandler, error) {
-	handler, exists := m.chainHandlers[chainID]
-	if !exists {
-		return nil, fmt.Errorf("unknown chain: %s", chainID)
-	}
-	return handler, nil
 }
 
 func (m *Multiplexer) startCmtNode() error {

@@ -21,9 +21,9 @@ func (m *Multiplexer) Query(ctx context.Context, req *abci.RequestQuery) (*abci.
 		return m.providerChain.Query(ctx, req)
 	}
 
-	handler, err := m.getConsumerHandler(req.ChainId)
-	if err != nil {
-		return &abci.ResponseQuery{Code: 1, Log: err.Error()}, nil
+	handler, exists := m.chainHandlers[req.ChainId]
+	if !exists {
+		return &abci.ResponseQuery{Code: 1, Log: fmt.Sprintf("unknown chain: %s", req.ChainId)}, nil
 	}
 
 	return handler.app.Query(ctx, req)
@@ -44,9 +44,9 @@ func (m *Multiplexer) CheckTx(ctx context.Context, req *abci.RequestCheckTx) (*a
 		return m.providerChain.CheckTx(&strippedReq)
 	}
 
-	handler, err := m.getConsumerHandler(chainID)
-	if err != nil {
-		return &abci.ResponseCheckTx{Code: 1, Log: err.Error()}, nil
+	handler, exists := m.chainHandlers[chainID]
+	if !exists {
+		return &abci.ResponseCheckTx{Code: 1, Log: fmt.Sprintf("unknown chain: %s", chainID)}, nil
 	}
 
 	return handler.app.CheckTx(&strippedReq)
@@ -217,9 +217,9 @@ func (m *Multiplexer) FinalizeBlock(ctx context.Context, req *abci.RequestFinali
 			chainTxs[m.providerChainID] = append(chainTxs[m.providerChainID], payload)
 			txPositions[m.providerChainID] = append(txPositions[m.providerChainID], idx)
 		} else {
-			handler, err := m.getConsumerHandler(chainID)
-			if err != nil {
-				return nil, fmt.Errorf("unknown chain for tx at index %d: %w", idx, err)
+			handler, exists := m.chainHandlers[chainID]
+			if !exists {
+				return nil, fmt.Errorf("unknown chain for tx at index %d: %s", idx, chainID)
 			}
 
 			chainTxs[handler.ChainID] = append(chainTxs[handler.ChainID], payload)
