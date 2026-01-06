@@ -68,6 +68,8 @@ type Multiplexer struct {
 	providerChainID string
 	// chainHandlers maps chain_id to chain handler
 	chainHandlers map[string]*ChainHandler
+	// rejectedConsumerChains tracks consumer chains that rejected the current proposal
+	rejectedConsumerChains map[string]bool
 	// cmNode is the comet node which has been created (of the provider chain).
 	cmNode *node.Node
 	// ctx is the context which is passed to the comet, grpc and api server starting functions.
@@ -96,13 +98,14 @@ func NewMultiplexer(
 	}
 
 	mp := &Multiplexer{
-		svrCtx:        svrCtx,
-		svrCfg:        svrCfg,
-		clientContext: clientCtx,
-		appCreator:    appCreator,
-		logger:        svrCtx.Logger.With("module", "multiplexer"),
-		chainHandlers: make(map[string]*ChainHandler, len(chainConfig.Chains)),
-		chainConfig:   chainConfig,
+		svrCtx:                 svrCtx,
+		svrCfg:                 svrCfg,
+		clientContext:          clientCtx,
+		appCreator:             appCreator,
+		logger:                 svrCtx.Logger.With("module", "multiplexer"),
+		chainHandlers:          make(map[string]*ChainHandler, len(chainConfig.Chains)),
+		rejectedConsumerChains: make(map[string]bool),
+		chainConfig:            chainConfig,
 	}
 
 	return mp, nil

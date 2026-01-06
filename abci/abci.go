@@ -147,6 +147,7 @@ func (m *Multiplexer) ProcessProposal(ctx context.Context, req *abci.RequestProc
 	}
 
 	type result struct {
+		chainID  string
 		response *abci.ResponseProcessProposal
 		err      error
 	}
@@ -173,7 +174,7 @@ func (m *Multiplexer) ProcessProposal(ctx context.Context, req *abci.RequestProc
 				resp, err = handler.app.ProcessProposal(&chainReq)
 			}
 
-			results <- result{response: resp, err: err}
+			results <- result{chainID: id, response: resp, err: err}
 		}(chainID, txs)
 	}
 
@@ -182,17 +183,31 @@ func (m *Multiplexer) ProcessProposal(ctx context.Context, req *abci.RequestProc
 		close(results)
 	}()
 
-	status := abci.ResponseProcessProposal_ACCEPT
+	// Clear rejected chains from previous proposal
+	m.rejectedConsumerChains = make(map[string]bool)
+
+	// Only reject proposal if provider chain rejects
+	// Consumer chain rejections will skip that chain's block
 	for res := range results {
 		if res.err != nil {
 			return nil, res.err
 		}
-		if res.response.Status != abci.ResponseProcessProposal_ACCEPT {
-			status = res.response.Status
+
+		// If provider chain rejects, reject the entire proposal
+		if res.chainID == m.providerChainID && res.response.Status != abci.ResponseProcessProposal_ACCEPT {
+			m.logger.Info("Provider chain rejected proposal, rejecting entire proposal")
+			return &abci.ResponseProcessProposal{Status: res.response.Status}, nil
+		}
+
+		// If consumer chain rejects, mark it to skip block in FinalizeBlock
+		if res.chainID != m.providerChainID && res.response.Status != abci.ResponseProcessProposal_ACCEPT {
+			m.logger.Info("Consumer chain rejected proposal, will skip block for this chain",
+				"chain_id", res.chainID, "status", res.response.Status)
+			m.rejectedConsumerChains[res.chainID] = true
 		}
 	}
 
-	return &abci.ResponseProcessProposal{Status: status}, nil
+	return &abci.ResponseProcessProposal{Status: abci.ResponseProcessProposal_ACCEPT}, nil
 }
 
 func (m *Multiplexer) FinalizeBlock(ctx context.Context, req *abci.RequestFinalizeBlock) (*abci.ResponseFinalizeBlock, error) {
@@ -205,6 +220,7 @@ func (m *Multiplexer) FinalizeBlock(ctx context.Context, req *abci.RequestFinali
 
 	chainTxs := make(map[string][][]byte)
 	txPositions := make(map[string][]int)
+	skippedTxIndices := make([]int, 0)
 
 	for idx, tx := range req.Txs {
 		chainID, payload, err := ParseHeader(tx)
@@ -217,6 +233,14 @@ func (m *Multiplexer) FinalizeBlock(ctx context.Context, req *abci.RequestFinali
 			chainTxs[m.providerChainID] = append(chainTxs[m.providerChainID], payload)
 			txPositions[m.providerChainID] = append(txPositions[m.providerChainID], idx)
 		} else {
+			// Skip transactions for rejected consumer chains
+			if m.rejectedConsumerChains[chainID] {
+				m.logger.Debug("Skipping transaction for rejected consumer chain",
+					"chain_id", chainID, "tx_index", idx)
+				skippedTxIndices = append(skippedTxIndices, idx)
+				continue
+			}
+
 			handler, exists := m.chainHandlers[chainID]
 			if !exists {
 				return nil, fmt.Errorf("unknown chain for tx at index %d: %s", idx, chainID)
@@ -280,6 +304,14 @@ func (m *Multiplexer) FinalizeBlock(ctx context.Context, req *abci.RequestFinali
 	var validatorUpdates []abci.ValidatorUpdate
 	var events []abci.Event
 
+	// Mark skipped transactions with error results
+	for _, idx := range skippedTxIndices {
+		response.TxResults[idx] = &abci.ExecTxResult{
+			Code: 1,
+			Log:  "transaction skipped: consumer chain rejected proposal",
+		}
+	}
+
 	for res := range results {
 		if res.err != nil {
 			return nil, res.err
@@ -314,6 +346,9 @@ func (m *Multiplexer) FinalizeBlock(ctx context.Context, req *abci.RequestFinali
 
 	response.ValidatorUpdates = validatorUpdates
 	response.Events = events
+
+	// Clear rejected consumer chains after finalizing block
+	m.rejectedConsumerChains = make(map[string]bool)
 
 	m.logger.Info("FinalizeBlock complete", "height", req.Height)
 	return response, nil
