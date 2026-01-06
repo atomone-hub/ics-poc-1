@@ -64,6 +64,8 @@ type Multiplexer struct {
 	appCreator servertypes.AppCreator
 	// providerChain is the native provider chain.
 	providerChain servertypes.Application
+	// providerChainID is the chain ID of the provider chain.
+	providerChainID string
 	// chainHandlers maps chain_id to chain handler
 	chainHandlers map[string]*ChainHandler
 	// cmNode is the comet node which has been created (of the provider chain).
@@ -159,6 +161,8 @@ func (m *Multiplexer) startNativeProvider() error {
 	}
 
 	m.providerChain = m.appCreator(m.logger, db, m.traceWriter, m.svrCtx.Viper)
+	m.providerChainID = getProviderChainID(m.svrCtx.Viper)
+
 	return nil
 }
 
@@ -207,8 +211,8 @@ func (m *Multiplexer) initRemoteGrpcConn(chainInfo config.ChainInfo) (*grpc.Clie
 	return conn, nil
 }
 
-// getHandler returns the handler for a chain ID
-func (m *Multiplexer) getHandler(chainID string) (*ChainHandler, error) {
+// getConsumerHandler returns the handler for a chain ID
+func (m *Multiplexer) getConsumerHandler(chainID string) (*ChainHandler, error) {
 	handler, exists := m.chainHandlers[chainID]
 	if !exists {
 		return nil, fmt.Errorf("unknown chain: %s", chainID)

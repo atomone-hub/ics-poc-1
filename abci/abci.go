@@ -11,23 +11,17 @@ import (
 
 func (m *Multiplexer) Info(ctx context.Context, req *abci.RequestInfo) (*abci.ResponseInfo, error) {
 	m.logger.Debug("Info")
-
-	var response *abci.ResponseInfo
-	for _, handler := range m.chainHandlers {
-		resp, err := handler.app.Info(req)
-		if err != nil {
-			return nil, err
-		}
-		response = resp
-	}
-
-	return response, nil
+	return m.providerChain.Info(req)
 }
 
 func (m *Multiplexer) Query(ctx context.Context, req *abci.RequestQuery) (*abci.ResponseQuery, error) {
 	m.logger.Debug("Query", "chain_id", req.ChainId)
 
-	handler, err := m.getHandler(req.ChainId)
+	if req.ChainId == m.providerChainID {
+		return m.providerChain.Query(ctx, req)
+	}
+
+	handler, err := m.getConsumerHandler(req.ChainId)
 	if err != nil {
 		return &abci.ResponseQuery{Code: 1, Log: err.Error()}, nil
 	}
@@ -43,13 +37,17 @@ func (m *Multiplexer) CheckTx(ctx context.Context, req *abci.RequestCheckTx) (*a
 		return &abci.ResponseCheckTx{Code: 1, Log: err.Error()}, nil
 	}
 
-	handler, err := m.getHandler(chainID)
+	strippedReq := *req
+	strippedReq.Tx = payload
+
+	if chainID == m.providerChainID {
+		return m.providerChain.CheckTx(&strippedReq)
+	}
+
+	handler, err := m.getConsumerHandler(chainID)
 	if err != nil {
 		return &abci.ResponseCheckTx{Code: 1, Log: err.Error()}, nil
 	}
-
-	strippedReq := *req
-	strippedReq.Tx = payload
 
 	return handler.app.CheckTx(&strippedReq)
 }
@@ -63,9 +61,19 @@ func (m *Multiplexer) InitChain(ctx context.Context, req *abci.RequestInitChain)
 		err      error
 	}
 
-	results := make(chan result, len(m.chainHandlers))
+	// Include provider chain in the count
+	numChains := len(m.chainHandlers) + 1
+	results := make(chan result, numChains)
 	var wg sync.WaitGroup
 
+	// Call provider chain first
+	wg.Go(func() {
+		defer wg.Done()
+		resp, err := m.providerChain.InitChain(req)
+		results <- result{chainID: req.ChainId, response: resp, err: err}
+	})
+
+	// Then call consumer chains
 	for chainID, handler := range m.chainHandlers {
 		wg.Add(1)
 		go func(id string, h *ChainHandler) {
@@ -90,7 +98,8 @@ func (m *Multiplexer) InitChain(ctx context.Context, req *abci.RequestInitChain)
 
 		chainHashes[res.chainID] = res.response.AppHash
 
-		if response.ConsensusParams == nil {
+		// Only use ConsensusParams from provider chain
+		if res.chainID == m.providerChainID {
 			response.ConsensusParams = res.response.ConsensusParams
 		}
 		response.Validators = append(response.Validators, res.response.Validators...)
@@ -127,8 +136,11 @@ func (m *Multiplexer) ProcessProposal(ctx context.Context, req *abci.RequestProc
 			return &abci.ResponseProcessProposal{Status: abci.ResponseProcessProposal_REJECT}, nil
 		}
 
-		if _, exists := m.chainHandlers[chainID]; !exists {
-			return &abci.ResponseProcessProposal{Status: abci.ResponseProcessProposal_REJECT}, nil
+		// Check if it's provider chain or consumer chain
+		if chainID != m.providerChainID {
+			if _, exists := m.chainHandlers[chainID]; !exists {
+				return &abci.ResponseProcessProposal{Status: abci.ResponseProcessProposal_REJECT}, nil
+			}
 		}
 
 		chainTxs[chainID] = append(chainTxs[chainID], payload)
@@ -147,11 +159,20 @@ func (m *Multiplexer) ProcessProposal(ctx context.Context, req *abci.RequestProc
 		go func(id string, transactions [][]byte) {
 			defer wg.Done()
 
-			handler := m.chainHandlers[id]
 			chainReq := *req
 			chainReq.Txs = transactions
 
-			resp, err := handler.app.ProcessProposal(&chainReq)
+			var resp *abci.ResponseProcessProposal
+			var err error
+
+			// Call provider chain or consumer chain
+			if id == m.providerChainID {
+				resp, err = m.providerChain.ProcessProposal(&chainReq)
+			} else {
+				handler := m.chainHandlers[id]
+				resp, err = handler.app.ProcessProposal(&chainReq)
+			}
+
 			results <- result{response: resp, err: err}
 		}(chainID, txs)
 	}
@@ -191,13 +212,19 @@ func (m *Multiplexer) FinalizeBlock(ctx context.Context, req *abci.RequestFinali
 			return nil, fmt.Errorf("invalid tx at index %d: %w", idx, err)
 		}
 
-		handler, err := m.getHandler(chainID)
-		if err != nil {
-			return nil, fmt.Errorf("unknown chain for tx at index %d: %w", idx, err)
-		}
+		// Check if it's for provider or consumer chain
+		if chainID == m.providerChainID {
+			chainTxs[m.providerChainID] = append(chainTxs[m.providerChainID], payload)
+			txPositions[m.providerChainID] = append(txPositions[m.providerChainID], idx)
+		} else {
+			handler, err := m.getConsumerHandler(chainID)
+			if err != nil {
+				return nil, fmt.Errorf("unknown chain for tx at index %d: %w", idx, err)
+			}
 
-		chainTxs[handler.ChainID] = append(chainTxs[handler.ChainID], payload)
-		txPositions[handler.ChainID] = append(txPositions[handler.ChainID], idx)
+			chainTxs[handler.ChainID] = append(chainTxs[handler.ChainID], payload)
+			txPositions[handler.ChainID] = append(txPositions[handler.ChainID], idx)
+		}
 	}
 
 	type result struct {
@@ -207,7 +234,9 @@ func (m *Multiplexer) FinalizeBlock(ctx context.Context, req *abci.RequestFinali
 		err       error
 	}
 
-	results := make(chan result, len(chainTxs))
+	// Count provider + consumer chains that have transactions
+	numChains := len(chainTxs)
+	results := make(chan result, numChains)
 	var wg sync.WaitGroup
 
 	for chainID, txs := range chainTxs {
@@ -215,11 +244,20 @@ func (m *Multiplexer) FinalizeBlock(ctx context.Context, req *abci.RequestFinali
 		go func(id string, transactions [][]byte, positions []int) {
 			defer wg.Done()
 
-			handler := m.chainHandlers[id]
 			chainReq := *req
 			chainReq.Txs = transactions
 
-			resp, err := handler.app.FinalizeBlock(&chainReq)
+			var resp *abci.ResponseFinalizeBlock
+			var err error
+
+			// Call provider chain or consumer chain
+			if id == m.providerChainID {
+				resp, err = m.providerChain.FinalizeBlock(&chainReq)
+			} else {
+				handler := m.chainHandlers[id]
+				resp, err = handler.app.FinalizeBlock(&chainReq)
+			}
+
 			results <- result{
 				chainID:   id,
 				response:  resp,
@@ -257,7 +295,8 @@ func (m *Multiplexer) FinalizeBlock(ctx context.Context, req *abci.RequestFinali
 		validatorUpdates = append(validatorUpdates, res.response.ValidatorUpdates...)
 		events = append(events, res.response.Events...)
 
-		if response.ConsensusParamUpdates == nil {
+		// Only use ConsensusParamUpdates from provider chain
+		if res.chainID == m.providerChainID {
 			response.ConsensusParamUpdates = res.response.ConsensusParamUpdates
 		}
 	}
@@ -283,7 +322,13 @@ func (m *Multiplexer) FinalizeBlock(ctx context.Context, req *abci.RequestFinali
 func (m *Multiplexer) Commit(ctx context.Context, req *abci.RequestCommit) (*abci.ResponseCommit, error) {
 	m.logger.Debug("Commit")
 
-	var response *abci.ResponseCommit
+	// Call provider chain first
+	response, err := m.providerChain.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	// Then call consumer chains
 	for _, handler := range m.chainHandlers {
 		resp, err := handler.app.Commit()
 		if err != nil {

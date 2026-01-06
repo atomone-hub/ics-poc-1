@@ -15,6 +15,7 @@ require (
 	github.com/cosmos/cosmos-db v1.1.3
 	github.com/cosmos/cosmos-sdk v0.0.0-00010101000000-000000000000
 	github.com/hashicorp/go-metrics v0.5.4
+	github.com/spf13/cast v1.9.2
 	github.com/spf13/viper v1.20.1
 	golang.org/x/sync v0.16.0
 	google.golang.org/grpc v1.75.0
@@ -247,7 +248,6 @@ require (
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/sourcegraph/go-diff v0.7.0 // indirect
 	github.com/spf13/afero v1.14.0 // indirect
-	github.com/spf13/cast v1.9.2 // indirect
 	github.com/spf13/cobra v1.9.1 // indirect
 	github.com/spf13/pflag v1.0.6 // indirect
 	github.com/ssgreg/nlreturn/v2 v2.2.1 // indirect
