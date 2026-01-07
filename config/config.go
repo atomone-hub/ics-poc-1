@@ -21,10 +21,6 @@ type ChainInfo struct {
 }
 
 func (c *Config) Validate() error {
-	if len(c.Chains) == 0 {
-		return fmt.Errorf("at least one chain required")
-	}
-
 	for i, app := range c.Chains {
 		if app.ChainID == "" {
 			return fmt.Errorf("chain_id required at index %d", i)
