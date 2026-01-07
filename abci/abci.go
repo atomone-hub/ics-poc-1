@@ -9,6 +9,9 @@ import (
 	abci "github.com/cometbft/cometbft/abci/types"
 )
 
+// Info consumer chains share the same consensus params as the provider chain.
+// Additionally, because the consensus is the one inherited from the provider chains, consumer chains,
+// regardless when they are started will share the same block height as the provider chain.
 func (m *Multiplexer) Info(ctx context.Context, req *abci.RequestInfo) (*abci.ResponseInfo, error) {
 	m.logger.Debug("Info")
 	return m.providerChain.Info(req)
@@ -53,7 +56,7 @@ func (m *Multiplexer) CheckTx(ctx context.Context, req *abci.RequestCheckTx) (*a
 }
 
 func (m *Multiplexer) InitChain(ctx context.Context, req *abci.RequestInitChain) (*abci.ResponseInitChain, error) {
-	m.logger.Info("InitChain", "chain_id", req.ChainId)
+	m.logger.Debug("InitChain", "chain_id", req.ChainId)
 
 	type result struct {
 		chainID  string
@@ -93,7 +96,13 @@ func (m *Multiplexer) InitChain(ctx context.Context, req *abci.RequestInitChain)
 
 	for res := range results {
 		if res.err != nil {
-			return nil, res.err
+			if res.chainID == m.providerChainID {
+				return nil, res.err
+			} else {
+				m.logger.Error("FinalizeBlock failed for consumer chain, skipping block for this chain",
+					"chain_id", res.chainID, "error", res.err)
+				continue
+			}
 		}
 
 		chainHashes[res.chainID] = res.response.AppHash
@@ -116,7 +125,6 @@ func (m *Multiplexer) InitChain(ctx context.Context, req *abci.RequestInitChain)
 		response.AppHash = append(response.AppHash, chainHashes[chainID]...)
 	}
 
-	m.logger.Info("InitChain complete", "num_chains", len(sortedChainIDs))
 	return response, nil
 }
 
@@ -313,7 +321,13 @@ func (m *Multiplexer) FinalizeBlock(ctx context.Context, req *abci.RequestFinali
 
 	for res := range results {
 		if res.err != nil {
-			return nil, res.err
+			if res.chainID == m.providerChainID {
+				return nil, res.err
+			} else {
+				m.logger.Error("FinalizeBlock failed for consumer chain, skipping block for this chain",
+					"chain_id", res.chainID, "error", res.err)
+				continue
+			}
 		}
 
 		for i, pos := range res.positions {
@@ -362,10 +376,11 @@ func (m *Multiplexer) Commit(ctx context.Context, req *abci.RequestCommit) (*abc
 	}
 
 	// Then call consumer chains
-	for _, handler := range m.chainHandlers {
+	for chainID, handler := range m.chainHandlers {
 		resp, err := handler.app.Commit()
 		if err != nil {
-			return nil, err
+			m.logger.Error("Commit failed for consumer chain", "chain_id", chainID, "error", err) // TODO: we should check how to recover from this.
+			continue
 		}
 		response = resp
 	}
