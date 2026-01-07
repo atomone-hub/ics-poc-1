@@ -98,11 +98,11 @@ func (m *Multiplexer) InitChain(ctx context.Context, req *abci.RequestInitChain)
 
 		chainHashes[res.chainID] = res.response.AppHash
 
-		// Only use ConsensusParams from provider chain
+		// Only use ConsensusParams and Validators from provider chain
 		if res.chainID == m.providerChainID {
 			response.ConsensusParams = res.response.ConsensusParams
+			response.Validators = append(response.Validators, res.response.Validators...)
 		}
-		response.Validators = append(response.Validators, res.response.Validators...)
 	}
 
 	// Combine app hashes in sorted order by chain ID
@@ -301,7 +301,6 @@ func (m *Multiplexer) FinalizeBlock(ctx context.Context, req *abci.RequestFinali
 	}
 
 	chainHashes := make(map[string][]byte)
-	var validatorUpdates []abci.ValidatorUpdate
 	var events []abci.Event
 
 	// Mark skipped transactions with error results
@@ -324,12 +323,12 @@ func (m *Multiplexer) FinalizeBlock(ctx context.Context, req *abci.RequestFinali
 		}
 
 		chainHashes[res.chainID] = res.response.AppHash
-		validatorUpdates = append(validatorUpdates, res.response.ValidatorUpdates...)
 		events = append(events, res.response.Events...)
 
-		// Only use ConsensusParamUpdates from provider chain
+		// Only use ConsensusParamUpdates and ValidatorUpdates from provider chain
 		if res.chainID == m.providerChainID {
 			response.ConsensusParamUpdates = res.response.ConsensusParamUpdates
+			response.ValidatorUpdates = append(response.ValidatorUpdates, res.response.ValidatorUpdates...)
 		}
 	}
 
@@ -344,7 +343,6 @@ func (m *Multiplexer) FinalizeBlock(ctx context.Context, req *abci.RequestFinali
 		response.AppHash = append(response.AppHash, chainHashes[chainID]...)
 	}
 
-	response.ValidatorUpdates = validatorUpdates
 	response.Events = events
 
 	// Clear rejected consumer chains after finalizing block
