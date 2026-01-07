@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/viper"
 )
@@ -38,30 +39,31 @@ func (c *Config) Validate() error {
 
 func DefaultConfig() *Config {
 	return &Config{
-		Chains: []ChainInfo{
-			{
-				ChainID:     "chain-1",
-				GRPCAddress: "grpc://localhost:9090",
-				Home:        "/tmp/chain1",
-			},
-			{
-				ChainID:     "chain-2",
-				GRPCAddress: "grpc://localhost:9091",
-				Home:        "/tmp/chain2",
-			},
-		},
+		Chains: []ChainInfo{},
 	}
 }
 
 func LoadConfig(configFile string) (*Config, error) {
 	config := DefaultConfig()
-
 	if configFile == "" {
 		return config, nil
 	}
 
 	if _, err := os.Stat(configFile); os.IsNotExist(err) {
-		return nil, fmt.Errorf("config file not found: %s", configFile)
+		// Create the directory if it doesn't exist
+		configDir := filepath.Dir(configFile)
+		if err := os.MkdirAll(configDir, 0755); err != nil {
+			return nil, fmt.Errorf("failed to create config directory: %w", err)
+		}
+
+		// Write default config
+		viper.SetConfigFile(configFile)
+		viper.Set("chains", config.Chains)
+		if err := viper.WriteConfig(); err != nil {
+			return nil, fmt.Errorf("failed to create config file: %w", err)
+		}
+
+		return config, nil
 	}
 
 	viper.SetConfigFile(configFile)
