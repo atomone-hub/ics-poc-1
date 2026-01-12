@@ -3,7 +3,7 @@ package ics.provider.module.v1;
 
 import "cosmos/app/v1alpha1/module.proto";
 
-option go_package = "modules/provider/types";
+option go_package = "github.com/atomone-hub/ics-poc-1/modules/provider/types";
 
 // Module is the config object for the module.
 message Module {

@@ -7,7 +7,11 @@ replace (
 	github.com/cosmos/cosmos-sdk => github.com/atomone-hub/cosmos-sdk v0.50.14-atomone.1.0.20260107105933-680c2b513b67
 )
 
-tool github.com/golangci/golangci-lint/cmd/golangci-lint
+tool (
+	github.com/cosmos/gogoproto/protoc-gen-gocosmos
+	github.com/golangci/golangci-lint/cmd/golangci-lint
+	github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway
+)
 
 require (
 	cosmossdk.io/api v0.9.2
@@ -113,6 +117,7 @@ require (
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/fzipp/gocyclo v0.6.0 // indirect
 	github.com/getsentry/sentry-go v0.35.0 // indirect
+	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/ghostiam/protogetter v0.3.9 // indirect
 	github.com/go-critic/go-critic v0.12.0 // indirect
 	github.com/go-kit/kit v0.13.0 // indirect
@@ -132,6 +137,7 @@ require (
 	github.com/gofrs/flock v0.12.1 // indirect
 	github.com/gogo/googleapis v1.4.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
+	github.com/golang/glog v1.2.5 // indirect
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
 	github.com/golang/mock v1.6.0 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
