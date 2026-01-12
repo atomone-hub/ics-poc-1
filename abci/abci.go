@@ -2,11 +2,14 @@ package abci
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
+	"strings"
 	"sync"
 
 	abci "github.com/cometbft/cometbft/abci/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // Info consumer chains share the same consensus params as the provider chain.
@@ -27,6 +30,15 @@ func (m *Multiplexer) Query(ctx context.Context, req *abci.RequestQuery) (*abci.
 	handler, exists := m.chainHandlers[req.ChainId]
 	if !exists {
 		return &abci.ResponseQuery{Code: 1, Log: fmt.Sprintf("unknown chain: %s", req.ChainId)}, nil
+	}
+
+	// Check if consumer chain is active
+	m.mu.Lock()
+	isActive := m.activeConsumerChains[req.ChainId]
+	m.mu.Unlock()
+
+	if !isActive {
+		return &abci.ResponseQuery{Code: 1, Log: fmt.Sprintf("inactive chain: %s", req.ChainId)}, nil
 	}
 
 	return handler.app.Query(ctx, req)
@@ -52,6 +64,15 @@ func (m *Multiplexer) CheckTx(ctx context.Context, req *abci.RequestCheckTx) (*a
 		return &abci.ResponseCheckTx{Code: 1, Log: fmt.Sprintf("unknown chain: %s", chainID)}, nil
 	}
 
+	// Check if consumer chain is active
+	m.mu.Lock()
+	isActive := m.activeConsumerChains[chainID]
+	m.mu.Unlock()
+
+	if !isActive {
+		return &abci.ResponseCheckTx{Code: 1, Log: fmt.Sprintf("inactive chain: %s", chainID)}, nil
+	}
+
 	return handler.app.CheckTx(&strippedReq)
 }
 
@@ -64,20 +85,34 @@ func (m *Multiplexer) InitChain(ctx context.Context, req *abci.RequestInitChain)
 		err      error
 	}
 
-	// Include provider chain in the count
-	numChains := len(m.chainHandlers) + 1
-	results := make(chan result, numChains)
+	// Count active chains + provider chain
+	m.mu.Lock()
+	activeCount := 1 // provider chain
+	for chainID := range m.chainHandlers {
+		if m.activeConsumerChains[chainID] {
+			activeCount++
+		}
+	}
+	m.mu.Unlock()
+
+	results := make(chan result, activeCount)
 	var wg sync.WaitGroup
 
 	// Call provider chain first
-	wg.Go(func() {
+	wg.Add(1)
+	go func() {
 		defer wg.Done()
 		resp, err := m.providerChain.InitChain(req)
 		results <- result{chainID: req.ChainId, response: resp, err: err}
-	})
+	}()
 
-	// Then call consumer chains
+	// Then call active consumer chains only
+	m.mu.Lock()
 	for chainID, handler := range m.chainHandlers {
+		if !m.activeConsumerChains[chainID] {
+			m.logger.Debug("Skipping InitChain for inactive consumer chain", "chain_id", chainID)
+			continue
+		}
 		wg.Add(1)
 		go func(id string, h *ChainHandler) {
 			defer wg.Done()
@@ -85,6 +120,7 @@ func (m *Multiplexer) InitChain(ctx context.Context, req *abci.RequestInitChain)
 			results <- result{chainID: id, response: resp, err: err}
 		}(chainID, handler)
 	}
+	m.mu.Unlock()
 
 	go func() {
 		wg.Wait()
@@ -149,6 +185,17 @@ func (m *Multiplexer) ProcessProposal(ctx context.Context, req *abci.RequestProc
 			if _, exists := m.chainHandlers[chainID]; !exists {
 				return &abci.ResponseProcessProposal{Status: abci.ResponseProcessProposal_REJECT}, nil
 			}
+
+			// Check if consumer chain is active
+			m.mu.Lock()
+			isActive := m.activeConsumerChains[chainID]
+			m.mu.Unlock()
+
+			if !isActive {
+				m.logger.Info("Rejecting transaction for inactive consumer chain in proposal",
+					"chain_id", chainID)
+				return &abci.ResponseProcessProposal{Status: abci.ResponseProcessProposal_REJECT}, nil
+			}
 		}
 
 		chainTxs[chainID] = append(chainTxs[chainID], payload)
@@ -178,8 +225,19 @@ func (m *Multiplexer) ProcessProposal(ctx context.Context, req *abci.RequestProc
 			if id == m.providerChainID {
 				resp, err = m.providerChain.ProcessProposal(&chainReq)
 			} else {
-				handler := m.chainHandlers[id]
-				resp, err = handler.app.ProcessProposal(&chainReq)
+				// Double-check the chain is still active
+				m.mu.Lock()
+				isActive := m.activeConsumerChains[id]
+				m.mu.Unlock()
+
+				if !isActive {
+					// Chain became inactive, skip it
+					resp = &abci.ResponseProcessProposal{Status: abci.ResponseProcessProposal_ACCEPT}
+					err = nil
+				} else {
+					handler := m.chainHandlers[id]
+					resp, err = handler.app.ProcessProposal(&chainReq)
+				}
 			}
 
 			results <- result{chainID: id, response: resp, err: err}
@@ -226,6 +284,14 @@ func (m *Multiplexer) FinalizeBlock(ctx context.Context, req *abci.RequestFinali
 		return nil, fmt.Errorf("failed to finalize block because the node should halt: %w", err)
 	}
 
+	// Store previous block's consumer app hashes for PostFinalizeBlock
+	m.mu.Lock()
+	previousConsumerHashes := make(map[string][]byte)
+	for chainID, hash := range m.lastConsumerAppHashes {
+		previousConsumerHashes[chainID] = hash
+	}
+	m.mu.Unlock()
+
 	chainTxs := make(map[string][][]byte)
 	txPositions := make(map[string][]int)
 	skippedTxIndices := make([]int, 0)
@@ -236,7 +302,7 @@ func (m *Multiplexer) FinalizeBlock(ctx context.Context, req *abci.RequestFinali
 			return nil, fmt.Errorf("invalid tx at index %d: %w", idx, err)
 		}
 
-		// Check if it's for provider or consumer chain
+		// Check if it's provider chain or consumer chain
 		if chainID == m.providerChainID {
 			chainTxs[m.providerChainID] = append(chainTxs[m.providerChainID], payload)
 			txPositions[m.providerChainID] = append(txPositions[m.providerChainID], idx)
@@ -244,6 +310,18 @@ func (m *Multiplexer) FinalizeBlock(ctx context.Context, req *abci.RequestFinali
 			// Skip transactions for rejected consumer chains
 			if m.rejectedConsumerChains[chainID] {
 				m.logger.Debug("Skipping transaction for rejected consumer chain",
+					"chain_id", chainID, "tx_index", idx)
+				skippedTxIndices = append(skippedTxIndices, idx)
+				continue
+			}
+
+			// Skip transactions for inactive consumer chains
+			m.mu.Lock()
+			isActive := m.activeConsumerChains[chainID]
+			m.mu.Unlock()
+
+			if !isActive {
+				m.logger.Debug("Skipping transaction for inactive consumer chain",
 					"chain_id", chainID, "tx_index", idx)
 				skippedTxIndices = append(skippedTxIndices, idx)
 				continue
@@ -286,6 +364,16 @@ func (m *Multiplexer) FinalizeBlock(ctx context.Context, req *abci.RequestFinali
 			if id == m.providerChainID {
 				resp, err = m.providerChain.FinalizeBlock(&chainReq)
 			} else {
+				// Double-check the chain is still active
+				m.mu.Lock()
+				isActive := m.activeConsumerChains[id]
+				m.mu.Unlock()
+
+				if !isActive {
+					m.logger.Info("Skipping FinalizeBlock for inactive consumer chain", "chain_id", id)
+					return
+				}
+
 				handler := m.chainHandlers[id]
 				resp, err = handler.app.FinalizeBlock(&chainReq)
 			}
@@ -315,7 +403,7 @@ func (m *Multiplexer) FinalizeBlock(ctx context.Context, req *abci.RequestFinali
 	for _, idx := range skippedTxIndices {
 		response.TxResults[idx] = &abci.ExecTxResult{
 			Code: 1,
-			Log:  "transaction skipped: consumer chain rejected proposal",
+			Log:  "transaction skipped: consumer chain rejected proposal or inactive",
 		}
 	}
 
@@ -362,8 +450,111 @@ func (m *Multiplexer) FinalizeBlock(ctx context.Context, req *abci.RequestFinali
 	// Clear rejected consumer chains after finalizing block
 	m.rejectedConsumerChains = make(map[string]bool)
 
+	// Store current consumer app hashes for next block's PostFinalizeBlock
+	m.mu.Lock()
+	m.lastConsumerAppHashes = make(map[string][]byte)
+	for chainID, hash := range chainHashes {
+		if chainID != m.providerChainID {
+			m.lastConsumerAppHashes[chainID] = hash
+		}
+	}
+	m.mu.Unlock()
+
+	// Call PostFinalizeBlock extension if the provider app implements it
+	if err := m.callPostFinalizeBlock(ctx, req.Height, previousConsumerHashes); err != nil {
+		// Check if this is a misconfiguration error - these are fatal
+		if strings.Contains(err.Error(), "node misconfiguration") {
+			return nil, fmt.Errorf("fatal configuration error in PostFinalizeBlock: %w", err)
+		}
+		m.logger.Error("PostFinalizeBlock failed", "height", req.Height, "error", err)
+	}
+
 	m.logger.Info("FinalizeBlock complete", "height", req.Height)
 	return response, nil
+}
+
+// callPostFinalizeBlock calls the PostFinalizeBlock extension on the provider app if it implements the interface
+func (m *Multiplexer) callPostFinalizeBlock(ctx context.Context, height int64, consumerAppHashes map[string][]byte) error {
+	postFinalizeBlocker, ok := m.providerChain.(HasPostFinalizeBlock)
+	if !ok {
+		return errors.New("provider does not implement PostFinalizeBlock")
+	}
+
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	req := PostFinalizeBlockRequest{
+		Height:            height,
+		ConsumerAppHashes: consumerAppHashes,
+	}
+
+	resp, err := postFinalizeBlocker.PostFinalizeBlock(sdkCtx, req)
+	if err != nil {
+		return fmt.Errorf("provider PostFinalizeBlock failed: %w", err)
+	}
+
+	// Validate that all active chains are configured in chainHandlers
+	// This prevents nodes from participating in consensus with incorrect configuration
+	for _, chain := range resp.ActiveChains {
+		if chain.Active {
+			if _, exists := m.chainHandlers[chain.ChainId]; !exists {
+				return fmt.Errorf("node misconfiguration: chain '%s' is marked as active by provider but not configured in this node's chain handlers - "+
+					"please add this chain to your configuration file and restart the node. "+
+					"Configured chains: %v", chain.ChainId, m.getConfiguredChainIDsLocked())
+			}
+		}
+	}
+
+	m.mu.Lock()
+	// Clear previous active chains
+	m.activeConsumerChains = make(map[string]bool)
+
+	// Set active chains from response
+	for _, chain := range resp.ActiveChains {
+		m.activeConsumerChains[chain.ChainId] = chain.Active
+		m.logger.Debug("Chain status update",
+			"chain_id", chain.ChainId,
+			"active", chain.Active,
+			"height", height)
+	}
+	m.mu.Unlock()
+
+	// Log active chains summary
+	activeCount := 0
+	for _, active := range m.activeConsumerChains {
+		if active {
+			activeCount++
+		}
+	}
+	m.logger.Info("PostFinalizeBlock: active chains updated",
+		"height", height,
+		"total_chains", len(resp.ActiveChains),
+		"active_chains", activeCount)
+
+	// Warn about configured chains that are not in the active chains response
+	// This could indicate a configuration mismatch or that the provider doesn't know about the chain yet
+	responseChains := make(map[string]bool)
+	for _, chain := range resp.ActiveChains {
+		responseChains[chain.ChainId] = true
+	}
+	for chainID := range m.chainHandlers {
+		if !responseChains[chainID] {
+			m.logger.Warn("Chain configured locally but not returned by provider",
+				"chain_id", chainID,
+				"height", height,
+				"suggestion", "verify chain is registered on provider or remove from local configuration")
+		}
+	}
+
+	return nil
+}
+
+// getConfiguredChainIDsLocked returns a list of configured chain IDs.
+// Caller must hold m.mu lock.
+func (m *Multiplexer) getConfiguredChainIDsLocked() []string {
+	chainIDs := make([]string, 0, len(m.chainHandlers))
+	for chainID := range m.chainHandlers {
+		chainIDs = append(chainIDs, chainID)
+	}
+	return chainIDs
 }
 
 func (m *Multiplexer) Commit(ctx context.Context, req *abci.RequestCommit) (*abci.ResponseCommit, error) {
@@ -375,8 +566,17 @@ func (m *Multiplexer) Commit(ctx context.Context, req *abci.RequestCommit) (*abc
 		return nil, err
 	}
 
-	// Then call consumer chains
+	// Then call active consumer chains only
+	m.mu.Lock()
+	activeChains := make(map[string]*ChainHandler)
 	for chainID, handler := range m.chainHandlers {
+		if m.activeConsumerChains[chainID] {
+			activeChains[chainID] = handler
+		}
+	}
+	m.mu.Unlock()
+
+	for chainID, handler := range activeChains {
 		resp, err := handler.app.Commit()
 		if err != nil {
 			m.logger.Error("Commit failed for consumer chain", "chain_id", chainID, "error", err) // TODO: we should check how to recover from this.

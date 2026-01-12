@@ -14,6 +14,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"google.golang.org/grpc"
 
+	"github.com/atomone-hub/ics-poc-1/abci"
 	"github.com/atomone-hub/ics-poc-1/modules/provider/keeper"
 	"github.com/atomone-hub/ics-poc-1/modules/provider/types"
 )
@@ -26,6 +27,8 @@ var (
 	_ appmodule.AppModule       = (*AppModule)(nil)
 	_ appmodule.HasBeginBlocker = (*AppModule)(nil)
 	_ appmodule.HasEndBlocker   = (*AppModule)(nil)
+
+	_ abci.HasPostFinalizeBlock = (*AppModule)(nil)
 )
 
 // AppModule implements the AppModule interface that defines the inter-dependent methods that modules need to implement
@@ -138,4 +141,11 @@ func (am AppModule) BeginBlock(ctx context.Context) error {
 // EndBlock contains the logic that is automatically triggered at the end of each block.
 func (am AppModule) EndBlock(ctx context.Context) error {
 	return EndBlocker(ctx, am.keeper)
+}
+
+// PostFinalizeBlock implements the HasPostFinalizeBlock extension interface.
+// It is called after FinalizeBlock to aggregate consumer chain data and determine
+// which chains should be active in the next block.
+func (am AppModule) PostFinalizeBlock(ctx context.Context, req abci.PostFinalizeBlockRequest) (abci.PostFinalizeBlockResponse, error) {
+	return PostFinalizeBlock(ctx, am.keeper, req)
 }

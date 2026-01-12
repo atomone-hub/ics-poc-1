@@ -70,6 +70,11 @@ type Multiplexer struct {
 	chainHandlers map[string]*ChainHandler
 	// rejectedConsumerChains tracks consumer chains that rejected the current proposal
 	rejectedConsumerChains map[string]bool
+	// lastConsumerAppHashes stores consumer app hashes from the previous block for PostFinalizeBlock
+	lastConsumerAppHashes map[string][]byte
+	// activeConsumerChains tracks which consumer chains should have blocks produced for them
+	// This is updated by PostFinalizeBlock and enforced in subsequent blocks
+	activeConsumerChains map[string]bool
 	// cmNode is the comet node which has been created (of the provider chain).
 	cmNode *node.Node
 	// ctx is the context which is passed to the comet, grpc and api server starting functions.
@@ -105,7 +110,15 @@ func NewMultiplexer(
 		logger:                 svrCtx.Logger.With("module", "multiplexer"),
 		chainHandlers:          make(map[string]*ChainHandler, len(chainConfig.Chains)),
 		rejectedConsumerChains: make(map[string]bool),
+		lastConsumerAppHashes:  make(map[string][]byte),
+		activeConsumerChains:   make(map[string]bool),
 		chainConfig:            chainConfig,
+	}
+
+	// Initialize all configured consumer chains as active by default
+	// This will be updated by PostFinalizeBlock if the provider implements the extension
+	for _, chainInfo := range chainConfig.Chains {
+		mp.activeConsumerChains[chainInfo.ChainID] = true
 	}
 
 	return mp, nil
@@ -133,6 +146,10 @@ func (m *Multiplexer) Start() error {
 	// Initialize all chain handlers
 	if err := m.initChainHandlers(); err != nil {
 		return fmt.Errorf("failed to initialize chain handlers: %w", err)
+	}
+
+	if err := m.validateChainConfiguration(); err != nil {
+		return fmt.Errorf("chain configuration validation failed: %w", err)
 	}
 
 	if m.isGrpcOnly() {
@@ -212,6 +229,33 @@ func (m *Multiplexer) initRemoteGrpcConn(chainInfo config.ChainInfo) (*grpc.Clie
 
 	m.logger.Info("initialized remote app client", "address", abciServerAddr, "chain_id", chainInfo.ChainID)
 	return conn, nil
+}
+
+// validateChainConfiguration logs configured chains for operator awareness.
+// Full validation happens at runtime during PostFinalizeBlock calls.
+func (m *Multiplexer) validateChainConfiguration() error {
+	m.logger.Info("Configured consumer chains",
+		"count", len(m.chainHandlers),
+		"chains", m.getConfiguredChainIDs())
+
+	// Check if provider implements PostFinalizeBlock
+	_, ok := m.providerChain.(HasPostFinalizeBlock)
+	if !ok {
+		m.logger.Info("Provider doesn't implement PostFinalizeBlock - all configured chains will be active by default")
+	} else {
+		m.logger.Info("Provider implements PostFinalizeBlock - chain activation will be controlled dynamically")
+	}
+
+	return nil
+}
+
+// getConfiguredChainIDs returns a list of configured chain IDs for logging
+func (m *Multiplexer) getConfiguredChainIDs() []string {
+	chainIDs := make([]string, 0, len(m.chainHandlers))
+	for chainID := range m.chainHandlers {
+		chainIDs = append(chainIDs, chainID)
+	}
+	return chainIDs
 }
 
 func (m *Multiplexer) startCmtNode() error {
