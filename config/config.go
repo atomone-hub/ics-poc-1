@@ -10,14 +10,14 @@ import (
 
 // Config represents configuration for consumer chains
 type Config struct {
-	Chains []ChainInfo
+	Chains []ChainInfo `mapstructure:"chains"`
 }
 
 // ChainInfo represents configuration for a single consumer chain
 type ChainInfo struct {
-	ChainID     string
-	Home        string
-	GRPCAddress string
+	ChainID     string `mapstructure:"chain_id"`
+	Home        string `mapstructure:"home"`
+	GRPCAddress string `mapstructure:"grpc_address"`
 }
 
 func (c *Config) Validate() error {
@@ -68,6 +68,7 @@ func LoadConfig(configFile string) (*Config, error) {
 		return nil, fmt.Errorf("failed to read config: %w", err)
 	}
 
+	config = &Config{}
 	if err := viper.Unmarshal(config); err != nil {
 		return nil, fmt.Errorf("failed to parse config: %w", err)
 	}

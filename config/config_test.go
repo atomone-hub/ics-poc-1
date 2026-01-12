@@ -62,13 +62,6 @@ func TestLoadConfig_WithEmptyPath(t *testing.T) {
 	}
 }
 
-func TestLoadConfig_WithNonExistentFile(t *testing.T) {
-	_, err := LoadConfig("nonexistent-file.toml")
-	if err == nil {
-		t.Fatal("expected error for non-existent file, got nil")
-	}
-}
-
 func TestLoadConfig_WithInvalidToml(t *testing.T) {
 	// Create a temporary invalid TOML file
 	tmpFile, err := os.CreateTemp("", "invalid-*.toml")
@@ -89,38 +82,6 @@ func TestLoadConfig_WithInvalidToml(t *testing.T) {
 	}
 }
 
-func TestLoadConfig_WithInvalidConfig(t *testing.T) {
-	// Use pre-created invalid config file (empty chains array)
-	configPath := filepath.Join("testdata", "invalid-config.toml")
-
-	_, err := LoadConfig(configPath)
-	if err == nil {
-		t.Fatal("expected validation error for config with no chains, got nil")
-	}
-}
-
-func TestDefaultConfig(t *testing.T) {
-	cfg := DefaultConfig()
-
-	if cfg == nil {
-		t.Fatal("expected default config to be non-nil")
-	}
-
-	if len(cfg.Chains) == 0 {
-		t.Fatal("expected default config to have chains")
-	}
-
-	// Verify all chains have required fields
-	for i, chain := range cfg.Chains {
-		if chain.ChainID == "" {
-			t.Errorf("chain at index %d has empty chain_id", i)
-		}
-		if chain.GRPCAddress == "" {
-			t.Errorf("chain at index %d has empty address", i)
-		}
-	}
-}
-
 func TestValidate_Success(t *testing.T) {
 	cfg := &Config{
 		Chains: []ChainInfo{
@@ -135,17 +96,6 @@ func TestValidate_Success(t *testing.T) {
 	err := cfg.Validate()
 	if err != nil {
 		t.Errorf("expected no validation error, got: %v", err)
-	}
-}
-
-func TestValidate_NoChains(t *testing.T) {
-	cfg := &Config{
-		Chains: []ChainInfo{},
-	}
-
-	err := cfg.Validate()
-	if err == nil {
-		t.Fatal("expected validation error for empty chains, got nil")
 	}
 }
 

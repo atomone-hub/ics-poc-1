@@ -1,9 +1,9 @@
-[[apps]]
+[[chains]]
 chain_id = "chain-1"
-address = "grpc://localhost:9090"
+grpc_address = "grpc://localhost:9090"
 home = "/tmp/chain1"
 
-[[apps]]
+[[chains]]
 chain_id = "chain-2"
-address = "grpc://localhost:9091"
+grpc_address = "grpc://localhost:9091"
 home = "/tmp/chain2"
