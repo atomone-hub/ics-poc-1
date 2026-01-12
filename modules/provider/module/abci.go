@@ -73,11 +73,9 @@ func PostFinalizeBlock(ctx context.Context, k keeper.Keeper, req abci.PostFinali
 		chainUpdate := abci.ChainUpdate{
 			ChainId: consumer.ChainId,
 			Active:  isActive,
-			Metadata: map[string]string{
-				"status":  consumer.Status.String(),
-				"name":    consumer.Name,
-				"version": consumer.Version,
-			},
+			Status:  consumer.Status.String(),
+			Name:    consumer.Name,
+			Version: consumer.Version,
 		}
 
 		activeChains = append(activeChains, chainUpdate)

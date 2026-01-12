@@ -199,23 +199,17 @@ func TestPostFinalizeBlockRequest_Validation(t *testing.T) {
 
 func TestChainUpdate_Properties(t *testing.T) {
 	tests := []struct {
-		name     string
-		update   ChainUpdate
-		metadata map[string]string
+		name   string
+		update ChainUpdate
 	}{
 		{
-			name: "active chain with metadata",
+			name: "active chain with full details",
 			update: ChainUpdate{
 				ChainId: "consumer-1",
 				Active:  true,
-				Metadata: map[string]string{
-					"status":  "ACTIVE",
-					"version": "v1.0.0",
-				},
-			},
-			metadata: map[string]string{
-				"status":  "ACTIVE",
-				"version": "v1.0.0",
+				Status:  "ACTIVE",
+				Name:    "Consumer Chain 1",
+				Version: "v1.0.0",
 			},
 		},
 		{
@@ -223,24 +217,27 @@ func TestChainUpdate_Properties(t *testing.T) {
 			update: ChainUpdate{
 				ChainId: "consumer-2",
 				Active:  false,
+				Status:  "SUNSET",
+				Name:    "Consumer Chain 2",
+				Version: "v0.9.0",
 			},
 		},
 		{
-			name: "chain with empty metadata",
+			name: "chain with minimal info",
 			update: ChainUpdate{
-				ChainId:  "consumer-3",
-				Active:   true,
-				Metadata: map[string]string{},
+				ChainId: "consumer-3",
+				Active:  true,
+				Status:  "PENDING",
 			},
-			metadata: map[string]string{},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			require.NotEmpty(t, tt.update.ChainId)
-			if tt.metadata != nil {
-				require.Equal(t, tt.metadata, tt.update.Metadata)
+			// Verify typed fields are accessible
+			if tt.update.Status != "" {
+				require.NotEmpty(t, tt.update.Status)
 			}
 		})
 	}
