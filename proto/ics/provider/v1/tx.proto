@@ -6,6 +6,7 @@ import "cosmos/msg/v1/msg.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 import "ics/provider/v1/params.proto";
+import "ics/provider/v1/provider.proto";
 
 option go_package = "github.com/atomone-hub/ics-poc-1/modules/provider/types";
 
@@ -16,6 +17,15 @@ service Msg {
   // UpdateParams defines a (governance) operation for updating the module
   // parameters. The authority defaults to the x/gov module account.
   rpc UpdateParams(MsgUpdateParams) returns (MsgUpdateParamsResponse);
+
+  // AddConsumer defines a governance operation for adding a new consumer chain.
+  rpc AddConsumer(MsgAddConsumer) returns (MsgAddConsumerResponse);
+
+  // SunsetConsumer defines a governance operation for sunsetting a consumer chain.
+  rpc SunsetConsumer(MsgSunsetConsumer) returns (MsgSunsetConsumerResponse);
+
+  // UpgradeConsumer defines a governance operation for upgrading a consumer chain.
+  rpc UpgradeConsumer(MsgUpgradeConsumer) returns (MsgUpgradeConsumerResponse);
 }
 
 // MsgUpdateParams is the Msg/UpdateParams request type.
@@ -38,3 +48,72 @@ message MsgUpdateParams {
 // MsgUpdateParamsResponse defines the response structure for executing a
 // MsgUpdateParams message.
 message MsgUpdateParamsResponse {}
+
+// MsgAddConsumer is the Msg/AddConsumer request type for adding a new consumer chain.
+message MsgAddConsumer {
+  option (cosmos.msg.v1.signer) = "authority";
+  option (amino.name) = "provider/MsgAddConsumer";
+
+  // authority is the address that controls the module (defaults to x/gov unless overwritten).
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+  // name is the human-readable name of the consumer chain.
+  string name = 2;
+
+  // chain_id is the chain ID of the consumer chain.
+  string chain_id = 3;
+
+  // version is the initial version of the consumer chain software.
+  string version = 4;
+
+  // block_height is the block height at which the consumer chain should be added.
+  int64 block_height = 5;
+}
+
+// MsgAddConsumerResponse defines the response structure for executing a
+// MsgAddConsumer message.
+message MsgAddConsumerResponse {
+  // module_account_address is the address of the created module account for this consumer.
+  string module_account_address = 1;
+}
+
+// MsgSunsetConsumer is the Msg/SunsetConsumer request type for sunsetting a consumer chain.
+message MsgSunsetConsumer {
+  option (cosmos.msg.v1.signer) = "authority";
+  option (amino.name) = "provider/MsgSunsetConsumer";
+
+  // authority is the address that controls the module (defaults to x/gov unless overwritten).
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+  // chain_id is the unique identifier for the consumer chain.
+  string chain_id = 2;
+
+  // block_height is the block height at which the consumer chain should be sunset.
+  int64 block_height = 3;
+}
+
+// MsgSunsetConsumerResponse defines the response structure for executing a
+// MsgSunsetConsumer message.
+message MsgSunsetConsumerResponse {}
+
+// MsgUpgradeConsumer is the Msg/UpgradeConsumer request type for upgrading a consumer chain.
+message MsgUpgradeConsumer {
+  option (cosmos.msg.v1.signer) = "authority";
+  option (amino.name) = "provider/MsgUpgradeConsumer";
+
+  // authority is the address that controls the module (defaults to x/gov unless overwritten).
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+  // chain_id is the unique identifier for the consumer chain.
+  string chain_id = 2;
+
+  // version is the new version of the consumer chain software.
+  string version = 3;
+
+  // block_height is the block height at which the upgrade should occur.
+  int64 block_height = 4;
+}
+
+// MsgUpgradeConsumerResponse defines the response structure for executing a
+// MsgUpgradeConsumer message.
+message MsgUpgradeConsumerResponse {}

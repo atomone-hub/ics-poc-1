@@ -4,6 +4,7 @@ package ics.provider.v1;
 import "amino/amino.proto";
 import "gogoproto/gogo.proto";
 import "ics/provider/v1/params.proto";
+import "ics/provider/v1/provider.proto";
 
 option go_package = "github.com/atomone-hub/ics-poc-1/modules/provider/types";
 
@@ -14,4 +15,7 @@ message GenesisState {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
+
+  // consumer_chains is the list of all registered consumer chains.
+  repeated ConsumerChain consumer_chains = 2 [(gogoproto.nullable) = false];
 }

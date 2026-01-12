@@ -6,7 +6,7 @@ package types
 import (
 	context "context"
 	fmt "fmt"
-	_ "github.com/cosmos/cosmos-sdk/types/query"
+	query "github.com/cosmos/cosmos-sdk/types/query"
 	_ "github.com/cosmos/cosmos-sdk/types/tx/amino"
 	_ "github.com/cosmos/gogoproto/gogoproto"
 	grpc1 "github.com/cosmos/gogoproto/grpc"
@@ -114,36 +114,247 @@ func (m *QueryParamsResponse) GetParams() Params {
 	return Params{}
 }
 
+// QueryConsumerChainsRequest is request type for the Query/ConsumerChains RPC method.
+type QueryConsumerChainsRequest struct {
+	// pagination defines an optional pagination for the request.
+	Pagination *query.PageRequest `protobuf:"bytes,1,opt,name=pagination,proto3" json:"pagination,omitempty"`
+}
+
+func (m *QueryConsumerChainsRequest) Reset()         { *m = QueryConsumerChainsRequest{} }
+func (m *QueryConsumerChainsRequest) String() string { return proto.CompactTextString(m) }
+func (*QueryConsumerChainsRequest) ProtoMessage()    {}
+func (*QueryConsumerChainsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_0f94dece288939d2, []int{2}
+}
+func (m *QueryConsumerChainsRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QueryConsumerChainsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_QueryConsumerChainsRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *QueryConsumerChainsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryConsumerChainsRequest.Merge(m, src)
+}
+func (m *QueryConsumerChainsRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *QueryConsumerChainsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryConsumerChainsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QueryConsumerChainsRequest proto.InternalMessageInfo
+
+func (m *QueryConsumerChainsRequest) GetPagination() *query.PageRequest {
+	if m != nil {
+		return m.Pagination
+	}
+	return nil
+}
+
+// QueryConsumerChainsResponse is response type for the Query/ConsumerChains RPC method.
+type QueryConsumerChainsResponse struct {
+	// consumer_chains is the list of all registered consumer chains.
+	ConsumerChains []ConsumerChain `protobuf:"bytes,1,rep,name=consumer_chains,json=consumerChains,proto3" json:"consumer_chains"`
+	// pagination defines the pagination in the response.
+	Pagination *query.PageResponse `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
+}
+
+func (m *QueryConsumerChainsResponse) Reset()         { *m = QueryConsumerChainsResponse{} }
+func (m *QueryConsumerChainsResponse) String() string { return proto.CompactTextString(m) }
+func (*QueryConsumerChainsResponse) ProtoMessage()    {}
+func (*QueryConsumerChainsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_0f94dece288939d2, []int{3}
+}
+func (m *QueryConsumerChainsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QueryConsumerChainsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_QueryConsumerChainsResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *QueryConsumerChainsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryConsumerChainsResponse.Merge(m, src)
+}
+func (m *QueryConsumerChainsResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *QueryConsumerChainsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryConsumerChainsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QueryConsumerChainsResponse proto.InternalMessageInfo
+
+func (m *QueryConsumerChainsResponse) GetConsumerChains() []ConsumerChain {
+	if m != nil {
+		return m.ConsumerChains
+	}
+	return nil
+}
+
+func (m *QueryConsumerChainsResponse) GetPagination() *query.PageResponse {
+	if m != nil {
+		return m.Pagination
+	}
+	return nil
+}
+
+// QueryConsumerChainRequest is request type for the Query/ConsumerChain RPC method.
+type QueryConsumerChainRequest struct {
+	// chain_id is the unique identifier for the consumer chain.
+	ChainId string `protobuf:"bytes,1,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
+}
+
+func (m *QueryConsumerChainRequest) Reset()         { *m = QueryConsumerChainRequest{} }
+func (m *QueryConsumerChainRequest) String() string { return proto.CompactTextString(m) }
+func (*QueryConsumerChainRequest) ProtoMessage()    {}
+func (*QueryConsumerChainRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_0f94dece288939d2, []int{4}
+}
+func (m *QueryConsumerChainRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QueryConsumerChainRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_QueryConsumerChainRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *QueryConsumerChainRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryConsumerChainRequest.Merge(m, src)
+}
+func (m *QueryConsumerChainRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *QueryConsumerChainRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryConsumerChainRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QueryConsumerChainRequest proto.InternalMessageInfo
+
+func (m *QueryConsumerChainRequest) GetChainId() string {
+	if m != nil {
+		return m.ChainId
+	}
+	return ""
+}
+
+// QueryConsumerChainResponse is response type for the Query/ConsumerChain RPC method.
+type QueryConsumerChainResponse struct {
+	// consumer_chain is the requested consumer chain.
+	ConsumerChain ConsumerChain `protobuf:"bytes,1,opt,name=consumer_chain,json=consumerChain,proto3" json:"consumer_chain"`
+}
+
+func (m *QueryConsumerChainResponse) Reset()         { *m = QueryConsumerChainResponse{} }
+func (m *QueryConsumerChainResponse) String() string { return proto.CompactTextString(m) }
+func (*QueryConsumerChainResponse) ProtoMessage()    {}
+func (*QueryConsumerChainResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_0f94dece288939d2, []int{5}
+}
+func (m *QueryConsumerChainResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QueryConsumerChainResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_QueryConsumerChainResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *QueryConsumerChainResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryConsumerChainResponse.Merge(m, src)
+}
+func (m *QueryConsumerChainResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *QueryConsumerChainResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryConsumerChainResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QueryConsumerChainResponse proto.InternalMessageInfo
+
+func (m *QueryConsumerChainResponse) GetConsumerChain() ConsumerChain {
+	if m != nil {
+		return m.ConsumerChain
+	}
+	return ConsumerChain{}
+}
+
 func init() {
 	proto.RegisterType((*QueryParamsRequest)(nil), "ics.provider.v1.QueryParamsRequest")
 	proto.RegisterType((*QueryParamsResponse)(nil), "ics.provider.v1.QueryParamsResponse")
+	proto.RegisterType((*QueryConsumerChainsRequest)(nil), "ics.provider.v1.QueryConsumerChainsRequest")
+	proto.RegisterType((*QueryConsumerChainsResponse)(nil), "ics.provider.v1.QueryConsumerChainsResponse")
+	proto.RegisterType((*QueryConsumerChainRequest)(nil), "ics.provider.v1.QueryConsumerChainRequest")
+	proto.RegisterType((*QueryConsumerChainResponse)(nil), "ics.provider.v1.QueryConsumerChainResponse")
 }
 
 func init() { proto.RegisterFile("ics/provider/v1/query.proto", fileDescriptor_0f94dece288939d2) }
 
 var fileDescriptor_0f94dece288939d2 = []byte{
-	// 333 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x90, 0xc1, 0x4a, 0xf3, 0x40,
-	0x14, 0x85, 0x93, 0x1f, 0xfe, 0x82, 0x71, 0x21, 0xc6, 0x42, 0xb5, 0x4a, 0x2a, 0xd5, 0x85, 0x14,
-	0x9a, 0x4b, 0xea, 0x42, 0x70, 0xd9, 0x27, 0xb0, 0x5d, 0xba, 0x9b, 0xa4, 0x43, 0x3a, 0xd0, 0x99,
-	0x3b, 0xcd, 0x4c, 0x02, 0x5d, 0xb8, 0xf1, 0x09, 0x04, 0x5f, 0xc2, 0xa5, 0x8f, 0xd1, 0x65, 0xc1,
-	0x8d, 0x2b, 0x91, 0x56, 0xf0, 0x35, 0x24, 0x33, 0x29, 0x68, 0x2b, 0x6e, 0xc2, 0xe5, 0x9e, 0xf3,
-	0x9d, 0x9c, 0x3b, 0xde, 0x31, 0x4b, 0x14, 0xc8, 0x0c, 0x0b, 0x36, 0xa2, 0x19, 0x14, 0x11, 0x4c,
-	0x73, 0x9a, 0xcd, 0x42, 0x99, 0xa1, 0x46, 0x7f, 0x8f, 0x25, 0x2a, 0x5c, 0x8b, 0x61, 0x11, 0x35,
-	0xf7, 0x09, 0x67, 0x02, 0xc1, 0x7c, 0xad, 0xa7, 0xd9, 0x49, 0x50, 0x71, 0x54, 0x10, 0x13, 0x45,
-	0x2d, 0x0c, 0x45, 0x14, 0x53, 0x4d, 0x22, 0x90, 0x24, 0x65, 0x82, 0x68, 0x86, 0xa2, 0xf2, 0xd6,
-	0x53, 0x4c, 0xd1, 0x8c, 0x50, 0x4e, 0xd5, 0xf6, 0x24, 0x45, 0x4c, 0x27, 0x14, 0x88, 0x64, 0x40,
-	0x84, 0x40, 0x6d, 0x10, 0xb5, 0x56, 0x37, 0x0b, 0x4a, 0x92, 0x11, 0x5e, 0xa9, 0xed, 0xba, 0xe7,
-	0x0f, 0xca, 0x7f, 0xde, 0x98, 0xe5, 0x90, 0x4e, 0x73, 0xaa, 0x74, 0x7b, 0xe0, 0x1d, 0xfc, 0xd8,
-	0x2a, 0x89, 0x42, 0x51, 0xff, 0xda, 0xab, 0x59, 0xf8, 0xd0, 0x3d, 0x75, 0x2f, 0x76, 0x7b, 0x8d,
-	0x70, 0xe3, 0xbe, 0xd0, 0x02, 0xfd, 0x9d, 0xf9, 0x5b, 0xcb, 0x79, 0xfa, 0x7c, 0xee, 0xb8, 0xc3,
-	0x8a, 0xe8, 0xdd, 0x79, 0xff, 0x4d, 0xa4, 0xaf, 0xbd, 0x9a, 0x75, 0xf9, 0x67, 0x5b, 0xf8, 0x76,
-	0x95, 0xe6, 0xf9, 0xdf, 0x26, 0xdb, 0xac, 0xdd, 0xba, 0x7f, 0xf9, 0x78, 0xfc, 0x77, 0xe4, 0x37,
-	0xe0, 0xf7, 0x6b, 0xfb, 0x83, 0xf9, 0x32, 0x70, 0x17, 0xcb, 0xc0, 0x7d, 0x5f, 0x06, 0xee, 0xc3,
-	0x2a, 0x70, 0x16, 0xab, 0xc0, 0x79, 0x5d, 0x05, 0xce, 0xed, 0x55, 0xca, 0xf4, 0x38, 0x8f, 0xc3,
-	0x04, 0x39, 0x10, 0x8d, 0x1c, 0x05, 0xed, 0x8e, 0xf3, 0xb8, 0x0c, 0xea, 0x4a, 0x4c, 0xba, 0x11,
-	0x70, 0x1c, 0xe5, 0x13, 0xfa, 0x2d, 0x56, 0xcf, 0x24, 0x55, 0x71, 0xcd, 0xbc, 0xe0, 0xe5, 0x57,
-	0x00, 0x00, 0x00, 0xff, 0xff, 0x52, 0xb4, 0x80, 0xdc, 0x02, 0x02, 0x00, 0x00,
+	// 550 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x94, 0x41, 0x6b, 0xd4, 0x40,
+	0x14, 0xc7, 0x77, 0x5a, 0xad, 0x76, 0x4a, 0xb7, 0x38, 0x16, 0xda, 0xdd, 0x4a, 0xba, 0x44, 0xd1,
+	0x65, 0xd7, 0x9d, 0x21, 0x5b, 0x50, 0xf0, 0xb8, 0x05, 0x45, 0x44, 0xe8, 0xe6, 0xe8, 0xa5, 0x4c,
+	0x92, 0x21, 0x3b, 0xd0, 0x64, 0xd2, 0x4c, 0xb2, 0x50, 0xc4, 0x8b, 0x9f, 0x40, 0x10, 0x8f, 0xde,
+	0x3d, 0x7a, 0xe9, 0x77, 0xe8, 0xb1, 0xe0, 0xc5, 0x93, 0xc8, 0xae, 0xe0, 0xd7, 0x90, 0x4c, 0x26,
+	0xda, 0x6c, 0x82, 0xdd, 0xcb, 0x32, 0x3b, 0xef, 0xbd, 0xff, 0xfb, 0xbd, 0xff, 0x3c, 0x02, 0xf7,
+	0xb8, 0x2b, 0x49, 0x14, 0x8b, 0x29, 0xf7, 0x58, 0x4c, 0xa6, 0x16, 0x39, 0x4d, 0x59, 0x7c, 0x86,
+	0xa3, 0x58, 0x24, 0x02, 0x6d, 0x71, 0x57, 0xe2, 0x22, 0x88, 0xa7, 0x56, 0xfb, 0x0e, 0x0d, 0x78,
+	0x28, 0x88, 0xfa, 0xcd, 0x73, 0xda, 0x3d, 0x57, 0xc8, 0x40, 0x48, 0xe2, 0x50, 0xc9, 0xf2, 0x62,
+	0x32, 0xb5, 0x1c, 0x96, 0x50, 0x8b, 0x44, 0xd4, 0xe7, 0x21, 0x4d, 0xb8, 0x08, 0x75, 0xee, 0xb6,
+	0x2f, 0x7c, 0xa1, 0x8e, 0x24, 0x3b, 0xe9, 0xdb, 0x7b, 0xbe, 0x10, 0xfe, 0x09, 0x23, 0x34, 0xe2,
+	0x84, 0x86, 0xa1, 0x48, 0x54, 0x89, 0x2c, 0xa2, 0x8b, 0x80, 0x11, 0x8d, 0x69, 0x50, 0x44, 0x8d,
+	0x4a, 0xb4, 0xa0, 0x55, 0x71, 0x73, 0x1b, 0xa2, 0x71, 0xc6, 0x74, 0xa4, 0x8a, 0x6c, 0x76, 0x9a,
+	0x32, 0x99, 0x98, 0x63, 0x78, 0xb7, 0x74, 0x2b, 0x23, 0x11, 0x4a, 0x86, 0x9e, 0xc1, 0xb5, 0x5c,
+	0x7c, 0x17, 0x74, 0x40, 0x77, 0x63, 0xb8, 0x83, 0x17, 0xe6, 0xc7, 0x79, 0xc1, 0x68, 0xfd, 0xe2,
+	0xc7, 0x7e, 0xe3, 0xcb, 0xef, 0xaf, 0x3d, 0x60, 0xeb, 0x0a, 0xd3, 0x83, 0x6d, 0x25, 0x79, 0x28,
+	0x42, 0x99, 0x06, 0x2c, 0x3e, 0x9c, 0x50, 0x1e, 0x16, 0x0d, 0xd1, 0x73, 0x08, 0xff, 0x99, 0xa1,
+	0xd5, 0x1f, 0xe2, 0xdc, 0x39, 0x9c, 0x39, 0x87, 0x73, 0xdb, 0xb5, 0x73, 0xf8, 0x88, 0xfa, 0x4c,
+	0xd7, 0xda, 0x57, 0x2a, 0xcd, 0x73, 0x00, 0xf7, 0x6a, 0xdb, 0xe8, 0x09, 0x5e, 0xc3, 0x2d, 0x57,
+	0x47, 0x8e, 0x5d, 0x15, 0xda, 0x05, 0x9d, 0xd5, 0xee, 0xc6, 0xd0, 0xa8, 0x8c, 0x52, 0x52, 0x18,
+	0xdd, 0xc8, 0x26, 0xb2, 0x9b, 0x6e, 0x49, 0x16, 0xbd, 0x28, 0x61, 0xaf, 0x28, 0xec, 0x47, 0xd7,
+	0x62, 0xe7, 0x2c, 0x25, 0xee, 0x27, 0xb0, 0x55, 0xc5, 0x2e, 0xcc, 0x69, 0xc1, 0xdb, 0x8a, 0xf5,
+	0x98, 0x7b, 0xca, 0x9a, 0x75, 0xfb, 0x96, 0xfa, 0xff, 0xd2, 0x33, 0x79, 0x9d, 0xab, 0x7f, 0xa7,
+	0x7d, 0x05, 0x9b, 0xe5, 0x69, 0xb5, 0xb3, 0xcb, 0x0d, 0xbb, 0x59, 0x1a, 0x76, 0x78, 0xbe, 0x0a,
+	0x6f, 0xaa, 0x5e, 0x28, 0x81, 0x6b, 0xf9, 0x3b, 0xa3, 0xfb, 0x15, 0xa1, 0xea, 0x32, 0xb5, 0x1f,
+	0xfc, 0x3f, 0x29, 0x67, 0x35, 0xf7, 0xdf, 0x7f, 0xfb, 0xf5, 0x71, 0xa5, 0x85, 0x76, 0x48, 0xfd,
+	0x3e, 0xa3, 0x4f, 0x00, 0x36, 0xcb, 0xaf, 0x8a, 0xfa, 0xf5, 0xca, 0xb5, 0x2b, 0xd6, 0x7e, 0xbc,
+	0x5c, 0xb2, 0xc6, 0xe9, 0x2a, 0x1c, 0x13, 0x75, 0x2a, 0x38, 0x0b, 0xfb, 0x83, 0x3e, 0x03, 0xb8,
+	0x59, 0x12, 0x41, 0xbd, 0x25, 0x3a, 0x15, 0x54, 0xfd, 0xa5, 0x72, 0x35, 0xd4, 0x81, 0x82, 0x1a,
+	0xa0, 0xfe, 0x75, 0x50, 0xe4, 0x6d, 0xb1, 0x30, 0xef, 0x46, 0xe3, 0x8b, 0x99, 0x01, 0x2e, 0x67,
+	0x06, 0xf8, 0x39, 0x33, 0xc0, 0x87, 0xb9, 0xd1, 0xb8, 0x9c, 0x1b, 0x8d, 0xef, 0x73, 0xa3, 0xf1,
+	0xe6, 0xa9, 0xcf, 0x93, 0x49, 0xea, 0x60, 0x57, 0x04, 0x84, 0x26, 0x22, 0x10, 0x21, 0x1b, 0x4c,
+	0x52, 0x27, 0x13, 0x1f, 0x44, 0xc2, 0x1d, 0x58, 0x24, 0x10, 0x5e, 0x7a, 0xc2, 0xae, 0xb4, 0x4a,
+	0xce, 0x22, 0x26, 0x9d, 0x35, 0xf5, 0xed, 0x38, 0xf8, 0x13, 0x00, 0x00, 0xff, 0xff, 0xdb, 0x7c,
+	0x66, 0x9c, 0x1c, 0x05, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -160,6 +371,10 @@ const _ = grpc.SupportPackageIsVersion4
 type QueryClient interface {
 	// Parameters queries the parameters of the module.
 	Params(ctx context.Context, in *QueryParamsRequest, opts ...grpc.CallOption) (*QueryParamsResponse, error)
+	// ConsumerChains queries all registered consumer chains.
+	ConsumerChains(ctx context.Context, in *QueryConsumerChainsRequest, opts ...grpc.CallOption) (*QueryConsumerChainsResponse, error)
+	// ConsumerChain queries a specific consumer chain by ID.
+	ConsumerChain(ctx context.Context, in *QueryConsumerChainRequest, opts ...grpc.CallOption) (*QueryConsumerChainResponse, error)
 }
 
 type queryClient struct {
@@ -179,10 +394,32 @@ func (c *queryClient) Params(ctx context.Context, in *QueryParamsRequest, opts .
 	return out, nil
 }
 
+func (c *queryClient) ConsumerChains(ctx context.Context, in *QueryConsumerChainsRequest, opts ...grpc.CallOption) (*QueryConsumerChainsResponse, error) {
+	out := new(QueryConsumerChainsResponse)
+	err := c.cc.Invoke(ctx, "/ics.provider.v1.Query/ConsumerChains", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queryClient) ConsumerChain(ctx context.Context, in *QueryConsumerChainRequest, opts ...grpc.CallOption) (*QueryConsumerChainResponse, error) {
+	out := new(QueryConsumerChainResponse)
+	err := c.cc.Invoke(ctx, "/ics.provider.v1.Query/ConsumerChain", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // QueryServer is the server API for Query service.
 type QueryServer interface {
 	// Parameters queries the parameters of the module.
 	Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error)
+	// ConsumerChains queries all registered consumer chains.
+	ConsumerChains(context.Context, *QueryConsumerChainsRequest) (*QueryConsumerChainsResponse, error)
+	// ConsumerChain queries a specific consumer chain by ID.
+	ConsumerChain(context.Context, *QueryConsumerChainRequest) (*QueryConsumerChainResponse, error)
 }
 
 // UnimplementedQueryServer can be embedded to have forward compatible implementations.
@@ -191,6 +428,12 @@ type UnimplementedQueryServer struct {
 
 func (*UnimplementedQueryServer) Params(ctx context.Context, req *QueryParamsRequest) (*QueryParamsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Params not implemented")
+}
+func (*UnimplementedQueryServer) ConsumerChains(ctx context.Context, req *QueryConsumerChainsRequest) (*QueryConsumerChainsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ConsumerChains not implemented")
+}
+func (*UnimplementedQueryServer) ConsumerChain(ctx context.Context, req *QueryConsumerChainRequest) (*QueryConsumerChainResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ConsumerChain not implemented")
 }
 
 func RegisterQueryServer(s grpc1.Server, srv QueryServer) {
@@ -215,6 +458,42 @@ func _Query_Params_Handler(srv interface{}, ctx context.Context, dec func(interf
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Query_ConsumerChains_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryConsumerChainsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).ConsumerChains(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ics.provider.v1.Query/ConsumerChains",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).ConsumerChains(ctx, req.(*QueryConsumerChainsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Query_ConsumerChain_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryConsumerChainRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).ConsumerChain(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ics.provider.v1.Query/ConsumerChain",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).ConsumerChain(ctx, req.(*QueryConsumerChainRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var Query_serviceDesc = _Query_serviceDesc
 var _Query_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "ics.provider.v1.Query",
@@ -223,6 +502,14 @@ var _Query_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Params",
 			Handler:    _Query_Params_Handler,
+		},
+		{
+			MethodName: "ConsumerChains",
+			Handler:    _Query_ConsumerChains_Handler,
+		},
+		{
+			MethodName: "ConsumerChain",
+			Handler:    _Query_ConsumerChain_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -285,6 +572,153 @@ func (m *QueryParamsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *QueryConsumerChainsRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QueryConsumerChainsRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QueryConsumerChainsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Pagination != nil {
+		{
+			size, err := m.Pagination.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintQuery(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *QueryConsumerChainsResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QueryConsumerChainsResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QueryConsumerChainsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Pagination != nil {
+		{
+			size, err := m.Pagination.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintQuery(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.ConsumerChains) > 0 {
+		for iNdEx := len(m.ConsumerChains) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.ConsumerChains[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintQuery(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *QueryConsumerChainRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QueryConsumerChainRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QueryConsumerChainRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.ChainId) > 0 {
+		i -= len(m.ChainId)
+		copy(dAtA[i:], m.ChainId)
+		i = encodeVarintQuery(dAtA, i, uint64(len(m.ChainId)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *QueryConsumerChainResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QueryConsumerChainResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QueryConsumerChainResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	{
+		size, err := m.ConsumerChain.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintQuery(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintQuery(dAtA []byte, offset int, v uint64) int {
 	offset -= sovQuery(v)
 	base := offset
@@ -312,6 +746,62 @@ func (m *QueryParamsResponse) Size() (n int) {
 	var l int
 	_ = l
 	l = m.Params.Size()
+	n += 1 + l + sovQuery(uint64(l))
+	return n
+}
+
+func (m *QueryConsumerChainsRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Pagination != nil {
+		l = m.Pagination.Size()
+		n += 1 + l + sovQuery(uint64(l))
+	}
+	return n
+}
+
+func (m *QueryConsumerChainsResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.ConsumerChains) > 0 {
+		for _, e := range m.ConsumerChains {
+			l = e.Size()
+			n += 1 + l + sovQuery(uint64(l))
+		}
+	}
+	if m.Pagination != nil {
+		l = m.Pagination.Size()
+		n += 1 + l + sovQuery(uint64(l))
+	}
+	return n
+}
+
+func (m *QueryConsumerChainRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.ChainId)
+	if l > 0 {
+		n += 1 + l + sovQuery(uint64(l))
+	}
+	return n
+}
+
+func (m *QueryConsumerChainResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = m.ConsumerChain.Size()
 	n += 1 + l + sovQuery(uint64(l))
 	return n
 }
@@ -431,6 +921,377 @@ func (m *QueryParamsResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if err := m.Params.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QueryConsumerChainsRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: QueryConsumerChainsRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: QueryConsumerChainsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Pagination", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Pagination == nil {
+				m.Pagination = &query.PageRequest{}
+			}
+			if err := m.Pagination.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QueryConsumerChainsResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: QueryConsumerChainsResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: QueryConsumerChainsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ConsumerChains", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ConsumerChains = append(m.ConsumerChains, ConsumerChain{})
+			if err := m.ConsumerChains[len(m.ConsumerChains)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Pagination", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Pagination == nil {
+				m.Pagination = &query.PageResponse{}
+			}
+			if err := m.Pagination.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QueryConsumerChainRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: QueryConsumerChainRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: QueryConsumerChainRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ChainId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ChainId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QueryConsumerChainResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: QueryConsumerChainResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: QueryConsumerChainResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ConsumerChain", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.ConsumerChain.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

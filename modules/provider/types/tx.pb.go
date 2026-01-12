@@ -126,38 +126,403 @@ func (m *MsgUpdateParamsResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_MsgUpdateParamsResponse proto.InternalMessageInfo
 
+// MsgAddConsumer is the Msg/AddConsumer request type for adding a new consumer chain.
+type MsgAddConsumer struct {
+	// authority is the address that controls the module (defaults to x/gov unless overwritten).
+	Authority string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
+	// name is the human-readable name of the consumer chain.
+	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	// chain_id is the chain ID of the consumer chain.
+	ChainId string `protobuf:"bytes,3,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
+	// version is the initial version of the consumer chain software.
+	Version string `protobuf:"bytes,4,opt,name=version,proto3" json:"version,omitempty"`
+	// block_height is the block height at which the consumer chain should be added.
+	BlockHeight int64 `protobuf:"varint,5,opt,name=block_height,json=blockHeight,proto3" json:"block_height,omitempty"`
+}
+
+func (m *MsgAddConsumer) Reset()         { *m = MsgAddConsumer{} }
+func (m *MsgAddConsumer) String() string { return proto.CompactTextString(m) }
+func (*MsgAddConsumer) ProtoMessage()    {}
+func (*MsgAddConsumer) Descriptor() ([]byte, []int) {
+	return fileDescriptor_618a07833a36ae62, []int{2}
+}
+func (m *MsgAddConsumer) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgAddConsumer) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgAddConsumer.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgAddConsumer) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgAddConsumer.Merge(m, src)
+}
+func (m *MsgAddConsumer) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgAddConsumer) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgAddConsumer.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgAddConsumer proto.InternalMessageInfo
+
+func (m *MsgAddConsumer) GetAuthority() string {
+	if m != nil {
+		return m.Authority
+	}
+	return ""
+}
+
+func (m *MsgAddConsumer) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *MsgAddConsumer) GetChainId() string {
+	if m != nil {
+		return m.ChainId
+	}
+	return ""
+}
+
+func (m *MsgAddConsumer) GetVersion() string {
+	if m != nil {
+		return m.Version
+	}
+	return ""
+}
+
+func (m *MsgAddConsumer) GetBlockHeight() int64 {
+	if m != nil {
+		return m.BlockHeight
+	}
+	return 0
+}
+
+// MsgAddConsumerResponse defines the response structure for executing a
+// MsgAddConsumer message.
+type MsgAddConsumerResponse struct {
+	// module_account_address is the address of the created module account for this consumer.
+	ModuleAccountAddress string `protobuf:"bytes,1,opt,name=module_account_address,json=moduleAccountAddress,proto3" json:"module_account_address,omitempty"`
+}
+
+func (m *MsgAddConsumerResponse) Reset()         { *m = MsgAddConsumerResponse{} }
+func (m *MsgAddConsumerResponse) String() string { return proto.CompactTextString(m) }
+func (*MsgAddConsumerResponse) ProtoMessage()    {}
+func (*MsgAddConsumerResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_618a07833a36ae62, []int{3}
+}
+func (m *MsgAddConsumerResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgAddConsumerResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgAddConsumerResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgAddConsumerResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgAddConsumerResponse.Merge(m, src)
+}
+func (m *MsgAddConsumerResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgAddConsumerResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgAddConsumerResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgAddConsumerResponse proto.InternalMessageInfo
+
+func (m *MsgAddConsumerResponse) GetModuleAccountAddress() string {
+	if m != nil {
+		return m.ModuleAccountAddress
+	}
+	return ""
+}
+
+// MsgSunsetConsumer is the Msg/SunsetConsumer request type for sunsetting a consumer chain.
+type MsgSunsetConsumer struct {
+	// authority is the address that controls the module (defaults to x/gov unless overwritten).
+	Authority string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
+	// chain_id is the unique identifier for the consumer chain.
+	ChainId string `protobuf:"bytes,2,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
+	// block_height is the block height at which the consumer chain should be sunset.
+	BlockHeight int64 `protobuf:"varint,3,opt,name=block_height,json=blockHeight,proto3" json:"block_height,omitempty"`
+}
+
+func (m *MsgSunsetConsumer) Reset()         { *m = MsgSunsetConsumer{} }
+func (m *MsgSunsetConsumer) String() string { return proto.CompactTextString(m) }
+func (*MsgSunsetConsumer) ProtoMessage()    {}
+func (*MsgSunsetConsumer) Descriptor() ([]byte, []int) {
+	return fileDescriptor_618a07833a36ae62, []int{4}
+}
+func (m *MsgSunsetConsumer) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgSunsetConsumer) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgSunsetConsumer.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgSunsetConsumer) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgSunsetConsumer.Merge(m, src)
+}
+func (m *MsgSunsetConsumer) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgSunsetConsumer) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgSunsetConsumer.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgSunsetConsumer proto.InternalMessageInfo
+
+func (m *MsgSunsetConsumer) GetAuthority() string {
+	if m != nil {
+		return m.Authority
+	}
+	return ""
+}
+
+func (m *MsgSunsetConsumer) GetChainId() string {
+	if m != nil {
+		return m.ChainId
+	}
+	return ""
+}
+
+func (m *MsgSunsetConsumer) GetBlockHeight() int64 {
+	if m != nil {
+		return m.BlockHeight
+	}
+	return 0
+}
+
+// MsgSunsetConsumerResponse defines the response structure for executing a
+// MsgSunsetConsumer message.
+type MsgSunsetConsumerResponse struct {
+}
+
+func (m *MsgSunsetConsumerResponse) Reset()         { *m = MsgSunsetConsumerResponse{} }
+func (m *MsgSunsetConsumerResponse) String() string { return proto.CompactTextString(m) }
+func (*MsgSunsetConsumerResponse) ProtoMessage()    {}
+func (*MsgSunsetConsumerResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_618a07833a36ae62, []int{5}
+}
+func (m *MsgSunsetConsumerResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgSunsetConsumerResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgSunsetConsumerResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgSunsetConsumerResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgSunsetConsumerResponse.Merge(m, src)
+}
+func (m *MsgSunsetConsumerResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgSunsetConsumerResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgSunsetConsumerResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgSunsetConsumerResponse proto.InternalMessageInfo
+
+// MsgUpgradeConsumer is the Msg/UpgradeConsumer request type for upgrading a consumer chain.
+type MsgUpgradeConsumer struct {
+	// authority is the address that controls the module (defaults to x/gov unless overwritten).
+	Authority string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
+	// chain_id is the unique identifier for the consumer chain.
+	ChainId string `protobuf:"bytes,2,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
+	// version is the new version of the consumer chain software.
+	Version string `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`
+	// block_height is the block height at which the upgrade should occur.
+	BlockHeight int64 `protobuf:"varint,4,opt,name=block_height,json=blockHeight,proto3" json:"block_height,omitempty"`
+}
+
+func (m *MsgUpgradeConsumer) Reset()         { *m = MsgUpgradeConsumer{} }
+func (m *MsgUpgradeConsumer) String() string { return proto.CompactTextString(m) }
+func (*MsgUpgradeConsumer) ProtoMessage()    {}
+func (*MsgUpgradeConsumer) Descriptor() ([]byte, []int) {
+	return fileDescriptor_618a07833a36ae62, []int{6}
+}
+func (m *MsgUpgradeConsumer) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgUpgradeConsumer) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgUpgradeConsumer.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgUpgradeConsumer) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgUpgradeConsumer.Merge(m, src)
+}
+func (m *MsgUpgradeConsumer) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgUpgradeConsumer) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgUpgradeConsumer.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgUpgradeConsumer proto.InternalMessageInfo
+
+func (m *MsgUpgradeConsumer) GetAuthority() string {
+	if m != nil {
+		return m.Authority
+	}
+	return ""
+}
+
+func (m *MsgUpgradeConsumer) GetChainId() string {
+	if m != nil {
+		return m.ChainId
+	}
+	return ""
+}
+
+func (m *MsgUpgradeConsumer) GetVersion() string {
+	if m != nil {
+		return m.Version
+	}
+	return ""
+}
+
+func (m *MsgUpgradeConsumer) GetBlockHeight() int64 {
+	if m != nil {
+		return m.BlockHeight
+	}
+	return 0
+}
+
+// MsgUpgradeConsumerResponse defines the response structure for executing a
+// MsgUpgradeConsumer message.
+type MsgUpgradeConsumerResponse struct {
+}
+
+func (m *MsgUpgradeConsumerResponse) Reset()         { *m = MsgUpgradeConsumerResponse{} }
+func (m *MsgUpgradeConsumerResponse) String() string { return proto.CompactTextString(m) }
+func (*MsgUpgradeConsumerResponse) ProtoMessage()    {}
+func (*MsgUpgradeConsumerResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_618a07833a36ae62, []int{7}
+}
+func (m *MsgUpgradeConsumerResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgUpgradeConsumerResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgUpgradeConsumerResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgUpgradeConsumerResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgUpgradeConsumerResponse.Merge(m, src)
+}
+func (m *MsgUpgradeConsumerResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgUpgradeConsumerResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgUpgradeConsumerResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgUpgradeConsumerResponse proto.InternalMessageInfo
+
 func init() {
 	proto.RegisterType((*MsgUpdateParams)(nil), "ics.provider.v1.MsgUpdateParams")
 	proto.RegisterType((*MsgUpdateParamsResponse)(nil), "ics.provider.v1.MsgUpdateParamsResponse")
+	proto.RegisterType((*MsgAddConsumer)(nil), "ics.provider.v1.MsgAddConsumer")
+	proto.RegisterType((*MsgAddConsumerResponse)(nil), "ics.provider.v1.MsgAddConsumerResponse")
+	proto.RegisterType((*MsgSunsetConsumer)(nil), "ics.provider.v1.MsgSunsetConsumer")
+	proto.RegisterType((*MsgSunsetConsumerResponse)(nil), "ics.provider.v1.MsgSunsetConsumerResponse")
+	proto.RegisterType((*MsgUpgradeConsumer)(nil), "ics.provider.v1.MsgUpgradeConsumer")
+	proto.RegisterType((*MsgUpgradeConsumerResponse)(nil), "ics.provider.v1.MsgUpgradeConsumerResponse")
 }
 
 func init() { proto.RegisterFile("ics/provider/v1/tx.proto", fileDescriptor_618a07833a36ae62) }
 
 var fileDescriptor_618a07833a36ae62 = []byte{
-	// 362 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x92, 0xc8, 0x4c, 0x2e, 0xd6,
-	0x2f, 0x28, 0xca, 0x2f, 0xcb, 0x4c, 0x49, 0x2d, 0xd2, 0x2f, 0x33, 0xd4, 0x2f, 0xa9, 0xd0, 0x2b,
-	0x28, 0xca, 0x2f, 0xc9, 0x17, 0xe2, 0xcf, 0x4c, 0x2e, 0xd6, 0x83, 0xc9, 0xe8, 0x95, 0x19, 0x4a,
-	0x09, 0x26, 0xe6, 0x66, 0xe6, 0xe5, 0xeb, 0x83, 0x49, 0x88, 0x1a, 0x29, 0xf1, 0xe4, 0xfc, 0xe2,
-	0xdc, 0xfc, 0x62, 0xfd, 0xdc, 0xe2, 0x74, 0x90, 0xde, 0xdc, 0xe2, 0x74, 0xa8, 0x84, 0x24, 0x44,
-	0x22, 0x1e, 0xcc, 0xd3, 0x87, 0x70, 0xa0, 0x52, 0x22, 0xe9, 0xf9, 0xe9, 0xf9, 0x10, 0x71, 0x10,
-	0x0b, 0x2a, 0x2a, 0x83, 0xee, 0x8e, 0x82, 0xc4, 0xa2, 0xc4, 0x5c, 0xa8, 0x1e, 0xa5, 0x4d, 0x8c,
-	0x5c, 0xfc, 0xbe, 0xc5, 0xe9, 0xa1, 0x05, 0x29, 0x89, 0x25, 0xa9, 0x01, 0x60, 0x19, 0x21, 0x33,
-	0x2e, 0xce, 0xc4, 0xd2, 0x92, 0x8c, 0xfc, 0xa2, 0xcc, 0x92, 0x4a, 0x09, 0x46, 0x05, 0x46, 0x0d,
-	0x4e, 0x27, 0x89, 0x4b, 0x5b, 0x74, 0x45, 0xa0, 0x96, 0x39, 0xa6, 0xa4, 0x14, 0xa5, 0x16, 0x17,
-	0x07, 0x97, 0x14, 0x65, 0xe6, 0xa5, 0x07, 0x21, 0x94, 0x0a, 0x59, 0x71, 0xb1, 0x41, 0xcc, 0x96,
-	0x60, 0x52, 0x60, 0xd4, 0xe0, 0x36, 0x12, 0xd7, 0x43, 0xf3, 0xa8, 0x1e, 0xc4, 0x02, 0x27, 0xce,
-	0x13, 0xf7, 0xe4, 0x19, 0x56, 0x3c, 0xdf, 0xa0, 0xc5, 0x18, 0x04, 0xd5, 0x61, 0xa5, 0xdd, 0xf4,
-	0x7c, 0x83, 0x16, 0xc2, 0xac, 0xae, 0xe7, 0x1b, 0xb4, 0x24, 0xe0, 0x8e, 0x46, 0x73, 0xa0, 0x92,
-	0x24, 0x97, 0x38, 0x9a, 0x50, 0x50, 0x6a, 0x71, 0x41, 0x7e, 0x5e, 0x71, 0xaa, 0x51, 0x06, 0x17,
-	0xb3, 0x6f, 0x71, 0xba, 0x50, 0x14, 0x17, 0x0f, 0x8a, 0x97, 0x14, 0x30, 0x9c, 0x82, 0x66, 0x80,
-	0x94, 0x06, 0x21, 0x15, 0x30, 0x2b, 0xa4, 0x58, 0x1b, 0x40, 0x2e, 0x77, 0x0a, 0x3c, 0xf1, 0x48,
-	0x8e, 0xf1, 0xc2, 0x23, 0x39, 0xc6, 0x07, 0x8f, 0xe4, 0x18, 0x27, 0x3c, 0x96, 0x63, 0xb8, 0xf0,
-	0x58, 0x8e, 0xe1, 0xc6, 0x63, 0x39, 0x86, 0x28, 0xf3, 0xf4, 0xcc, 0x92, 0x8c, 0xd2, 0x24, 0xbd,
-	0xe4, 0xfc, 0x5c, 0xfd, 0xc4, 0x92, 0xfc, 0xdc, 0xfc, 0xbc, 0x54, 0xdd, 0x8c, 0xd2, 0x24, 0xfd,
-	0xcc, 0xe4, 0x62, 0xdd, 0x82, 0xfc, 0x64, 0x5d, 0x43, 0xfd, 0xdc, 0xfc, 0x94, 0xd2, 0x9c, 0x54,
-	0xa4, 0x68, 0x29, 0xa9, 0x2c, 0x48, 0x2d, 0x4e, 0x62, 0x03, 0xc7, 0x89, 0x31, 0x20, 0x00, 0x00,
-	0xff, 0xff, 0x04, 0x47, 0xe6, 0xc0, 0x3b, 0x02, 0x00, 0x00,
+	// 638 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x54, 0xcf, 0x6b, 0xd4, 0x40,
+	0x14, 0xde, 0xe9, 0xf6, 0x87, 0x3b, 0x2d, 0x2d, 0x0d, 0xa5, 0x9b, 0x4d, 0x4b, 0xba, 0xc6, 0x83,
+	0xcb, 0x96, 0x4d, 0x68, 0x15, 0x85, 0xde, 0x5a, 0x2f, 0x7a, 0x58, 0xd1, 0x14, 0x11, 0x7a, 0x59,
+	0xb3, 0xc9, 0x30, 0x19, 0x6c, 0x32, 0x21, 0x33, 0x59, 0xec, 0x4d, 0x3c, 0x89, 0x27, 0xff, 0x0c,
+	0x8f, 0x45, 0x3c, 0xf8, 0x27, 0xf4, 0x58, 0xc4, 0x83, 0x27, 0x29, 0xed, 0xa1, 0xff, 0x86, 0x74,
+	0x26, 0xd9, 0xe6, 0x47, 0x71, 0x45, 0xf1, 0x12, 0x32, 0xdf, 0xf7, 0xbd, 0xbc, 0xf7, 0xbd, 0xbc,
+	0x37, 0x50, 0x25, 0x2e, 0xb3, 0xa2, 0x98, 0x8e, 0x88, 0x87, 0x62, 0x6b, 0xb4, 0x65, 0xf1, 0x37,
+	0x66, 0x14, 0x53, 0x4e, 0x95, 0x25, 0xe2, 0x32, 0x33, 0x63, 0xcc, 0xd1, 0x96, 0xb6, 0xec, 0x04,
+	0x24, 0xa4, 0x96, 0x78, 0x4a, 0x8d, 0xd6, 0x74, 0x29, 0x0b, 0x28, 0xb3, 0x02, 0x86, 0xaf, 0x62,
+	0x03, 0x86, 0x53, 0xa2, 0x25, 0x89, 0x81, 0x38, 0x59, 0xf2, 0x90, 0x52, 0x2b, 0x98, 0x62, 0x2a,
+	0xf1, 0xab, 0xb7, 0x14, 0x5d, 0x2f, 0xd7, 0x11, 0x39, 0xb1, 0x13, 0x64, 0x31, 0x7a, 0x85, 0xcd,
+	0xea, 0x12, 0xbc, 0xf1, 0x19, 0xc0, 0xa5, 0x3e, 0xc3, 0x2f, 0x22, 0xcf, 0xe1, 0xe8, 0x99, 0x88,
+	0x54, 0x1e, 0xc0, 0x86, 0x93, 0x70, 0x9f, 0xc6, 0x84, 0x1f, 0xa9, 0xa0, 0x0d, 0x3a, 0x8d, 0x3d,
+	0xf5, 0xdb, 0x97, 0xde, 0x4a, 0x5a, 0xcc, 0xae, 0xe7, 0xc5, 0x88, 0xb1, 0x7d, 0x1e, 0x93, 0x10,
+	0xdb, 0xd7, 0x52, 0x65, 0x07, 0xce, 0xca, 0xdc, 0xea, 0x54, 0x1b, 0x74, 0xe6, 0xb7, 0x9b, 0x66,
+	0xa9, 0x11, 0xa6, 0x4c, 0xb0, 0xd7, 0x38, 0xf9, 0xb9, 0x51, 0xfb, 0x74, 0x79, 0xdc, 0x05, 0x76,
+	0x1a, 0xb1, 0xb3, 0xf9, 0xee, 0xf2, 0xb8, 0x7b, 0xfd, 0xad, 0x0f, 0x97, 0xc7, 0x5d, 0x75, 0x5c,
+	0x76, 0xa9, 0x40, 0xa3, 0x05, 0x9b, 0x25, 0xc8, 0x46, 0x2c, 0xa2, 0x21, 0x43, 0xc6, 0x19, 0x80,
+	0x8b, 0x7d, 0x86, 0x77, 0x3d, 0xef, 0x11, 0x0d, 0x59, 0x12, 0xa0, 0xf8, 0xaf, 0xed, 0x28, 0x70,
+	0x3a, 0x74, 0x02, 0x24, 0xcc, 0x34, 0x6c, 0xf1, 0xae, 0xb4, 0xe0, 0x2d, 0xd7, 0x77, 0x48, 0x38,
+	0x20, 0x9e, 0x5a, 0x17, 0xf8, 0x9c, 0x38, 0x3f, 0xf1, 0x14, 0x15, 0xce, 0x8d, 0x50, 0xcc, 0x08,
+	0x0d, 0xd5, 0x69, 0xc9, 0xa4, 0x47, 0xe5, 0x36, 0x5c, 0x18, 0x1e, 0x52, 0xf7, 0xf5, 0xc0, 0x47,
+	0x04, 0xfb, 0x5c, 0x9d, 0x69, 0x83, 0x4e, 0xdd, 0x9e, 0x17, 0xd8, 0x63, 0x01, 0xed, 0x74, 0xab,
+	0xf6, 0x9b, 0x79, 0xfb, 0x39, 0x3f, 0xc6, 0x53, 0xb8, 0x5a, 0x44, 0x32, 0xf3, 0xca, 0x7d, 0xb8,
+	0x1a, 0x50, 0x2f, 0x39, 0x44, 0x03, 0xc7, 0x75, 0x69, 0x12, 0xf2, 0x81, 0x23, 0xcd, 0x49, 0xdb,
+	0xf6, 0x8a, 0x64, 0x77, 0x25, 0x99, 0x1a, 0x37, 0xbe, 0x02, 0xb8, 0xdc, 0x67, 0x78, 0x3f, 0x09,
+	0x19, 0xe2, 0xff, 0xdc, 0xb5, 0x7c, 0x87, 0xa6, 0x8a, 0x1d, 0x2a, 0xf7, 0xa1, 0x5e, 0xed, 0x43,
+	0xaf, 0xda, 0x07, 0x2d, 0xdf, 0x87, 0x62, 0x91, 0xc6, 0x1a, 0x6c, 0x55, 0xc0, 0xf1, 0x28, 0x7c,
+	0x07, 0x50, 0x11, 0x63, 0x82, 0x63, 0xc7, 0x43, 0xff, 0xd3, 0x58, 0xee, 0xd7, 0xd7, 0x7f, 0xff,
+	0xeb, 0xa7, 0xab, 0x96, 0xcd, 0xaa, 0xe5, 0xb5, 0xe2, 0xe4, 0x17, 0xea, 0x37, 0xd6, 0xa1, 0x56,
+	0x45, 0x33, 0xd3, 0xdb, 0xef, 0xeb, 0xb0, 0xde, 0x67, 0x58, 0x39, 0x80, 0x0b, 0x85, 0x9d, 0x6e,
+	0x57, 0x76, 0xb1, 0xb4, 0x41, 0x5a, 0x67, 0x92, 0x62, 0x3c, 0x66, 0x2f, 0xe1, 0x7c, 0x7e, 0xbf,
+	0x36, 0x6e, 0x0a, 0xcc, 0x09, 0xb4, 0xbb, 0x13, 0x04, 0xe3, 0x0f, 0xbf, 0x82, 0x8b, 0xa5, 0x29,
+	0x34, 0x6e, 0x0a, 0x2d, 0x6a, 0xb4, 0xee, 0x64, 0xcd, 0x38, 0x83, 0x0b, 0x97, 0xca, 0xf3, 0x70,
+	0xe7, 0x66, 0xdf, 0x05, 0x91, 0xb6, 0xf9, 0x07, 0xa2, 0x2c, 0x89, 0x36, 0xf3, 0xf6, 0xea, 0x6a,
+	0xdb, 0x7b, 0x7e, 0x72, 0xae, 0x83, 0xd3, 0x73, 0x1d, 0x9c, 0x9d, 0xeb, 0xe0, 0xe3, 0x85, 0x5e,
+	0x3b, 0xbd, 0xd0, 0x6b, 0x3f, 0x2e, 0xf4, 0xda, 0xc1, 0x43, 0x4c, 0xb8, 0x9f, 0x0c, 0x4d, 0x97,
+	0x06, 0x96, 0xc3, 0x69, 0x40, 0x43, 0xd4, 0xf3, 0x93, 0xa1, 0x45, 0x5c, 0xd6, 0x8b, 0xa8, 0xdb,
+	0xdb, 0xb2, 0xe4, 0xa2, 0xe6, 0x6e, 0x6e, 0x7e, 0x14, 0x21, 0x36, 0x9c, 0x15, 0x97, 0xf6, 0xbd,
+	0x5f, 0x01, 0x00, 0x00, 0xff, 0xff, 0xee, 0xa1, 0xa4, 0xca, 0x7c, 0x06, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -175,6 +540,12 @@ type MsgClient interface {
 	// UpdateParams defines a (governance) operation for updating the module
 	// parameters. The authority defaults to the x/gov module account.
 	UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error)
+	// AddConsumer defines a governance operation for adding a new consumer chain.
+	AddConsumer(ctx context.Context, in *MsgAddConsumer, opts ...grpc.CallOption) (*MsgAddConsumerResponse, error)
+	// SunsetConsumer defines a governance operation for sunsetting a consumer chain.
+	SunsetConsumer(ctx context.Context, in *MsgSunsetConsumer, opts ...grpc.CallOption) (*MsgSunsetConsumerResponse, error)
+	// UpgradeConsumer defines a governance operation for upgrading a consumer chain.
+	UpgradeConsumer(ctx context.Context, in *MsgUpgradeConsumer, opts ...grpc.CallOption) (*MsgUpgradeConsumerResponse, error)
 }
 
 type msgClient struct {
@@ -194,11 +565,44 @@ func (c *msgClient) UpdateParams(ctx context.Context, in *MsgUpdateParams, opts 
 	return out, nil
 }
 
+func (c *msgClient) AddConsumer(ctx context.Context, in *MsgAddConsumer, opts ...grpc.CallOption) (*MsgAddConsumerResponse, error) {
+	out := new(MsgAddConsumerResponse)
+	err := c.cc.Invoke(ctx, "/ics.provider.v1.Msg/AddConsumer", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) SunsetConsumer(ctx context.Context, in *MsgSunsetConsumer, opts ...grpc.CallOption) (*MsgSunsetConsumerResponse, error) {
+	out := new(MsgSunsetConsumerResponse)
+	err := c.cc.Invoke(ctx, "/ics.provider.v1.Msg/SunsetConsumer", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) UpgradeConsumer(ctx context.Context, in *MsgUpgradeConsumer, opts ...grpc.CallOption) (*MsgUpgradeConsumerResponse, error) {
+	out := new(MsgUpgradeConsumerResponse)
+	err := c.cc.Invoke(ctx, "/ics.provider.v1.Msg/UpgradeConsumer", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MsgServer is the server API for Msg service.
 type MsgServer interface {
 	// UpdateParams defines a (governance) operation for updating the module
 	// parameters. The authority defaults to the x/gov module account.
 	UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error)
+	// AddConsumer defines a governance operation for adding a new consumer chain.
+	AddConsumer(context.Context, *MsgAddConsumer) (*MsgAddConsumerResponse, error)
+	// SunsetConsumer defines a governance operation for sunsetting a consumer chain.
+	SunsetConsumer(context.Context, *MsgSunsetConsumer) (*MsgSunsetConsumerResponse, error)
+	// UpgradeConsumer defines a governance operation for upgrading a consumer chain.
+	UpgradeConsumer(context.Context, *MsgUpgradeConsumer) (*MsgUpgradeConsumerResponse, error)
 }
 
 // UnimplementedMsgServer can be embedded to have forward compatible implementations.
@@ -207,6 +611,15 @@ type UnimplementedMsgServer struct {
 
 func (*UnimplementedMsgServer) UpdateParams(ctx context.Context, req *MsgUpdateParams) (*MsgUpdateParamsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateParams not implemented")
+}
+func (*UnimplementedMsgServer) AddConsumer(ctx context.Context, req *MsgAddConsumer) (*MsgAddConsumerResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddConsumer not implemented")
+}
+func (*UnimplementedMsgServer) SunsetConsumer(ctx context.Context, req *MsgSunsetConsumer) (*MsgSunsetConsumerResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SunsetConsumer not implemented")
+}
+func (*UnimplementedMsgServer) UpgradeConsumer(ctx context.Context, req *MsgUpgradeConsumer) (*MsgUpgradeConsumerResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpgradeConsumer not implemented")
 }
 
 func RegisterMsgServer(s grpc1.Server, srv MsgServer) {
@@ -231,6 +644,60 @@ func _Msg_UpdateParams_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Msg_AddConsumer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgAddConsumer)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).AddConsumer(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ics.provider.v1.Msg/AddConsumer",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).AddConsumer(ctx, req.(*MsgAddConsumer))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_SunsetConsumer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgSunsetConsumer)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).SunsetConsumer(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ics.provider.v1.Msg/SunsetConsumer",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).SunsetConsumer(ctx, req.(*MsgSunsetConsumer))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_UpgradeConsumer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgUpgradeConsumer)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).UpgradeConsumer(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ics.provider.v1.Msg/UpgradeConsumer",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).UpgradeConsumer(ctx, req.(*MsgUpgradeConsumer))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var Msg_serviceDesc = _Msg_serviceDesc
 var _Msg_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "ics.provider.v1.Msg",
@@ -239,6 +706,18 @@ var _Msg_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateParams",
 			Handler:    _Msg_UpdateParams_Handler,
+		},
+		{
+			MethodName: "AddConsumer",
+			Handler:    _Msg_AddConsumer_Handler,
+		},
+		{
+			MethodName: "SunsetConsumer",
+			Handler:    _Msg_SunsetConsumer_Handler,
+		},
+		{
+			MethodName: "UpgradeConsumer",
+			Handler:    _Msg_UpgradeConsumer_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -308,6 +787,229 @@ func (m *MsgUpdateParamsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
+func (m *MsgAddConsumer) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgAddConsumer) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgAddConsumer) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.BlockHeight != 0 {
+		i = encodeVarintTx(dAtA, i, uint64(m.BlockHeight))
+		i--
+		dAtA[i] = 0x28
+	}
+	if len(m.Version) > 0 {
+		i -= len(m.Version)
+		copy(dAtA[i:], m.Version)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Version)))
+		i--
+		dAtA[i] = 0x22
+	}
+	if len(m.ChainId) > 0 {
+		i -= len(m.ChainId)
+		copy(dAtA[i:], m.ChainId)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.ChainId)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.Name) > 0 {
+		i -= len(m.Name)
+		copy(dAtA[i:], m.Name)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Name)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Authority) > 0 {
+		i -= len(m.Authority)
+		copy(dAtA[i:], m.Authority)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Authority)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgAddConsumerResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgAddConsumerResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgAddConsumerResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.ModuleAccountAddress) > 0 {
+		i -= len(m.ModuleAccountAddress)
+		copy(dAtA[i:], m.ModuleAccountAddress)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.ModuleAccountAddress)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgSunsetConsumer) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgSunsetConsumer) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgSunsetConsumer) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.BlockHeight != 0 {
+		i = encodeVarintTx(dAtA, i, uint64(m.BlockHeight))
+		i--
+		dAtA[i] = 0x18
+	}
+	if len(m.ChainId) > 0 {
+		i -= len(m.ChainId)
+		copy(dAtA[i:], m.ChainId)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.ChainId)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Authority) > 0 {
+		i -= len(m.Authority)
+		copy(dAtA[i:], m.Authority)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Authority)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgSunsetConsumerResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgSunsetConsumerResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgSunsetConsumerResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgUpgradeConsumer) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgUpgradeConsumer) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgUpgradeConsumer) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.BlockHeight != 0 {
+		i = encodeVarintTx(dAtA, i, uint64(m.BlockHeight))
+		i--
+		dAtA[i] = 0x20
+	}
+	if len(m.Version) > 0 {
+		i -= len(m.Version)
+		copy(dAtA[i:], m.Version)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Version)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.ChainId) > 0 {
+		i -= len(m.ChainId)
+		copy(dAtA[i:], m.ChainId)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.ChainId)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Authority) > 0 {
+		i -= len(m.Authority)
+		copy(dAtA[i:], m.Authority)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Authority)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgUpgradeConsumerResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgUpgradeConsumerResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgUpgradeConsumerResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintTx(dAtA []byte, offset int, v uint64) int {
 	offset -= sovTx(v)
 	base := offset
@@ -335,6 +1037,109 @@ func (m *MsgUpdateParams) Size() (n int) {
 }
 
 func (m *MsgUpdateParamsResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
+func (m *MsgAddConsumer) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Authority)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = len(m.Name)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = len(m.ChainId)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = len(m.Version)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	if m.BlockHeight != 0 {
+		n += 1 + sovTx(uint64(m.BlockHeight))
+	}
+	return n
+}
+
+func (m *MsgAddConsumerResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.ModuleAccountAddress)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	return n
+}
+
+func (m *MsgSunsetConsumer) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Authority)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = len(m.ChainId)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	if m.BlockHeight != 0 {
+		n += 1 + sovTx(uint64(m.BlockHeight))
+	}
+	return n
+}
+
+func (m *MsgSunsetConsumerResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
+func (m *MsgUpgradeConsumer) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Authority)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = len(m.ChainId)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = len(m.Version)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	if m.BlockHeight != 0 {
+		n += 1 + sovTx(uint64(m.BlockHeight))
+	}
+	return n
+}
+
+func (m *MsgUpgradeConsumerResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -491,6 +1296,683 @@ func (m *MsgUpdateParamsResponse) Unmarshal(dAtA []byte) error {
 		}
 		if fieldNum <= 0 {
 			return fmt.Errorf("proto: MsgUpdateParamsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgAddConsumer) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgAddConsumer: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgAddConsumer: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Authority", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Authority = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Name = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ChainId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ChainId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Version", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Version = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BlockHeight", wireType)
+			}
+			m.BlockHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.BlockHeight |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgAddConsumerResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgAddConsumerResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgAddConsumerResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ModuleAccountAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ModuleAccountAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgSunsetConsumer) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgSunsetConsumer: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgSunsetConsumer: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Authority", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Authority = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ChainId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ChainId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BlockHeight", wireType)
+			}
+			m.BlockHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.BlockHeight |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgSunsetConsumerResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgSunsetConsumerResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgSunsetConsumerResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgUpgradeConsumer) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgUpgradeConsumer: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgUpgradeConsumer: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Authority", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Authority = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ChainId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ChainId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Version", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Version = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BlockHeight", wireType)
+			}
+			m.BlockHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.BlockHeight |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgUpgradeConsumerResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgUpgradeConsumerResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgUpgradeConsumerResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		default:

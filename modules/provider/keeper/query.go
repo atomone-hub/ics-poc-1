@@ -34,3 +34,11 @@ func (q queryServer) Params(ctx context.Context, req *types.QueryParamsRequest) 
 
 	return &types.QueryParamsResponse{Params: params}, nil
 }
+
+func (q queryServer) ConsumerChain(ctx context.Context, req *types.QueryConsumerChainRequest) (*types.QueryConsumerChainResponse, error) {
+	panic("unimplemented")
+}
+
+func (q queryServer) ConsumerChains(ctx context.Context, req *types.QueryConsumerChainsRequest) (*types.QueryConsumerChainsResponse, error) {
+	panic("unimplemented")
+}

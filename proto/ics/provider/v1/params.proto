@@ -2,6 +2,7 @@ syntax = "proto3";
 package ics.provider.v1;
 
 import "amino/amino.proto";
+import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 
 option go_package = "github.com/atomone-hub/ics-poc-1/modules/provider/types";
@@ -10,4 +11,15 @@ option go_package = "github.com/atomone-hub/ics-poc-1/modules/provider/types";
 message Params {
   option (amino.name) = "provider/Params";
   option (gogoproto.equal) = true;
+
+  // fees_per_block is the fee charged per block for consumer chain operation.
+  string fees_per_block = 1 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false
+  ];
+
+  // downtime_slashing_window is the number of blocks in which a validator
+  // can be offline before being slashed for downtime on consumer chains.
+  int64 downtime_slashing_window = 2;
 }

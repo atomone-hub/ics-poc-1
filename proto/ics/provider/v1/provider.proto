@@ -1,0 +1,51 @@
+syntax = "proto3";
+package ics.provider.v1;
+
+import "amino/amino.proto";
+import "gogoproto/gogo.proto";
+
+option go_package = "github.com/atomone-hub/ics-poc-1/modules/provider/types";
+
+// ConsumerChain represents a consumer chain registered with the provider.
+message ConsumerChain {
+  option (gogoproto.equal) = true;
+
+  // chain_id is the chain ID of the consumer chain.
+  string chain_id = 1;
+
+  // name is the human-readable name of the consumer chain.
+  string name = 2;
+
+  // version is the version of the consumer chain software.
+  string version = 3;
+
+  // status indicates the current status of the consumer chain.
+  ConsumerStatus status = 4;
+
+  // added_at is the block height at which the consumer was added.
+  int64 added_at = 5;
+
+  // sunset_at is the block height at which the consumer will be sunset (0 if not scheduled).
+  int64 sunset_at = 6;
+
+  // module_account_address is the address of the module account for this consumer.
+  string module_account_address = 7;
+}
+
+// ConsumerStatus defines the status of a consumer chain.
+enum ConsumerStatus {
+  // CONSUMER_STATUS_UNSPECIFIED defines an unknown status.
+  CONSUMER_STATUS_UNSPECIFIED = 0;
+
+  // CONSUMER_STATUS_PENDING defines a consumer chain that is scheduled to start.
+  CONSUMER_STATUS_PENDING = 1;
+
+  // CONSUMER_STATUS_ACTIVE defines a consumer chain that is currently active.
+  CONSUMER_STATUS_ACTIVE = 2;
+
+  // CONSUMER_STATUS_SUNSET defines a consumer chain that is scheduled to be removed.
+  CONSUMER_STATUS_SUNSET = 3;
+
+  // CONSUMER_STATUS_REMOVED defines a consumer chain that has been removed.
+  CONSUMER_STATUS_REMOVED = 4;
+}

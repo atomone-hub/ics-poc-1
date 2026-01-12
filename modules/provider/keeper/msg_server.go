@@ -41,3 +41,15 @@ func (k msgServer) UpdateParams(ctx context.Context, req *types.MsgUpdateParams)
 
 	return &types.MsgUpdateParamsResponse{}, nil
 }
+
+func (k msgServer) AddConsumer(ctx context.Context, req *types.MsgAddConsumer) (*types.MsgAddConsumerResponse, error) {
+	panic("unimplemented")
+}
+
+func (k msgServer) SunsetConsumer(ctx context.Context, req *types.MsgSunsetConsumer) (*types.MsgSunsetConsumerResponse, error) {
+	panic("unimplemented")
+}
+
+func (k msgServer) UpgradeConsumer(ctx context.Context, req *types.MsgUpgradeConsumer) (*types.MsgUpgradeConsumerResponse, error) {
+	panic("unimplemented")
+}

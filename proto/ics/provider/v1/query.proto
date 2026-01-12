@@ -6,6 +6,7 @@ import "cosmos/base/query/v1beta1/pagination.proto";
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "ics/provider/v1/params.proto";
+import "ics/provider/v1/provider.proto";
 
 option go_package = "github.com/atomone-hub/ics-poc-1/modules/provider/types";
 
@@ -14,6 +15,16 @@ service Query {
   // Parameters queries the parameters of the module.
   rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
     option (google.api.http).get = "/ics/provider/v1/params";
+  }
+
+  // ConsumerChains queries all registered consumer chains.
+  rpc ConsumerChains(QueryConsumerChainsRequest) returns (QueryConsumerChainsResponse) {
+    option (google.api.http).get = "/ics/provider/v1/consumer_chains";
+  }
+
+  // ConsumerChain queries a specific consumer chain by ID.
+  rpc ConsumerChain(QueryConsumerChainRequest) returns (QueryConsumerChainResponse) {
+    option (google.api.http).get = "/ics/provider/v1/consumer_chains/{chain_id}";
   }
 }
 
@@ -27,4 +38,31 @@ message QueryParamsResponse {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
+}
+
+// QueryConsumerChainsRequest is request type for the Query/ConsumerChains RPC method.
+message QueryConsumerChainsRequest {
+  // pagination defines an optional pagination for the request.
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+}
+
+// QueryConsumerChainsResponse is response type for the Query/ConsumerChains RPC method.
+message QueryConsumerChainsResponse {
+  // consumer_chains is the list of all registered consumer chains.
+  repeated ConsumerChain consumer_chains = 1 [(gogoproto.nullable) = false];
+
+  // pagination defines the pagination in the response.
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// QueryConsumerChainRequest is request type for the Query/ConsumerChain RPC method.
+message QueryConsumerChainRequest {
+  // chain_id is the unique identifier for the consumer chain.
+  string chain_id = 1;
+}
+
+// QueryConsumerChainResponse is response type for the Query/ConsumerChain RPC method.
+message QueryConsumerChainResponse {
+  // consumer_chain is the requested consumer chain.
+  ConsumerChain consumer_chain = 1 [(gogoproto.nullable) = false];
 }
