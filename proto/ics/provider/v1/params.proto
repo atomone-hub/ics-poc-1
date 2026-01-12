@@ -1,0 +1,13 @@
+syntax = "proto3";
+package ics.provider.v1;
+
+import "amino/amino.proto";
+import "gogoproto/gogo.proto";
+
+option go_package = "github.com/atomone-hub/ics-poc-1/modules/provider/types";
+
+// Params defines the parameters for the module.
+message Params {
+  option (amino.name) = "provider/Params";
+  option (gogoproto.equal) = true;
+}
