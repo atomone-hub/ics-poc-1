@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/atomone-hub/ics-poc-1/app/provider/keepers"
 	"github.com/atomone-hub/ics-poc-1/app/provider/encoding"
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/gogoproto/proto"
@@ -22,7 +21,7 @@ import (
 	storetypes "cosmossdk.io/store/types"
 
 	"cosmossdk.io/x/tx/signing"
-
+"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/grpc/cmtservice"
@@ -117,6 +116,7 @@ var (
 		mint.AppModuleBasic{},
 		slashing.AppModuleBasic{},
 		distr.AppModuleBasic{},
+		staking.AppModuleBasic{},
 
 
 
@@ -144,7 +144,6 @@ var (
 // capabilities aren't needed for testing.
 type App struct { // nolint: golint
 	*baseapp.BaseApp
-	keepers.AppKeepers
 	legacyAmino       *codec.LegacyAmino
 	appCodec          codec.Codec
 	interfaceRegistry types.InterfaceRegistry
@@ -341,21 +340,6 @@ func New(
 	)
 
 
-	invCheckPeriod := cast.ToUint(appOpts.Get(server.FlagInvCheckPeriod))
-	app.AppKeepers = keepers.NewAppKeeper(
-		appCodec,
-		bApp,
-		legacyAmino,
-		maccPerms,
-		moduleAccountAddresses,
-		app.BlockedModuleAccountAddrs(moduleAccountAddresses),
-		skipUpgradeHeights,
-		DefaultNodeHome,
-		invCheckPeriod,
-		logger,
-		appOpts,
-	)
-
 	govConfig := govtypes.DefaultConfig()
 	app.GovKeeper = govkeeper.NewKeeper(
 		appCodec,
@@ -371,8 +355,6 @@ func New(
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
 
-	// set the GovKeeper in the ProviderKeeper
-	app.AppKeepers.SetGovKeeper(app.GovKeeper)
 
 	app.MintKeeper = mintkeeper.NewKeeper(
 		appCodec,
@@ -408,6 +390,7 @@ func New(
 		mint.NewAppModule(appCodec, app.MintKeeper, app.AccountKeeper, nil, app.GetSubspace(minttypes.ModuleName)),
 		slashing.NewAppModule(appCodec, app.SlashingKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper, app.GetSubspace(slashingtypes.ModuleName), app.interfaceRegistry),
 		distr.NewAppModule(appCodec, app.DistrKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper, app.GetSubspace(distrtypes.ModuleName)),
+		staking.NewAppModule(appCodec, app.StakingKeeper, app.AccountKeeper, app.BankKeeper, app.GetSubspace(stakingtypes.ModuleName)),
 
 		params.NewAppModule(app.ParamsKeeper),
 	)
