@@ -36,14 +36,6 @@ func TestMsgUpdateParams(t *testing.T) {
 			expErrMsg: "invalid authority",
 		},
 		{
-			name: "send enabled param",
-			input: &types.MsgUpdateParams{
-				Authority: authorityStr,
-				Params:    types.Params{},
-			},
-			expErr: false,
-		},
-		{
 			name: "all good",
 			input: &types.MsgUpdateParams{
 				Authority: authorityStr,

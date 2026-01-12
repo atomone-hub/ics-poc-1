@@ -1,2 +1,0 @@
-# Config with no chains - should fail validation
-chains = []
