@@ -5,10 +5,13 @@ import (
 	"io"
 	"os"
 
+	"path/filepath"
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
+	icscmd "github.com/atomone-hub/ics-poc-1/cmd"
+	icscfg "github.com/atomone-hub/ics-poc-1/config"
 	"cosmossdk.io/client/v2/autocli"
 	"cosmossdk.io/log"
 	confixcmd "cosmossdk.io/tools/confix/cmd"
@@ -214,7 +217,14 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig appEncoding.EncodingConf
 		server.QueryBlockResultsCmd(),
 	)
 
-	server.AddCommands(rootCmd, providerApp.DefaultNodeHome, newApp, appExport, addModuleInitFlags)
+	icsConfig, err := icscfg.LoadConfig(filepath.Join(providerApp.DefaultNodeHome, "config", "ics.toml"))
+	if err != nil {
+		panic(err)
+	}
+
+	server.AddCommandsWithStartCmdOptions(rootCmd, providerApp.DefaultNodeHome, newApp, appExport, server.StartCmdOptions{
+		StartCommandHandler: icscmd.NewProvider(*icsConfig),
+	})	
 
 	// add keybase, auxiliary RPC, query, genesis, and tx child commands
 	rootCmd.AddCommand(
