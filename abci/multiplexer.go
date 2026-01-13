@@ -71,8 +71,7 @@ type Multiplexer struct {
 	chainHandlers map[string]*ChainHandler
 	// rejectedConsumerChains tracks consumer chains that rejected the current proposal
 	rejectedConsumerChains map[string]bool
-	// initializedChains tracks which chains have had InitChain called during this session.
-	// This is populated by checking if chains have state on startup and during InitChain calls.
+	// initializedChains tracks which chains have had InitChain called
 	initializedChains map[string]bool
 	// activeChains tracks the list of active chains from the provider module
 	activeChains map[string]bool
@@ -201,9 +200,8 @@ func (m *Multiplexer) initChainHandlers() error {
 	return nil
 }
 
-// initRemoteGrpcConn initializes a gRPC connection to the remote application client and configures transport credentials.
+// initRemoteGrpcConn initializes a gRPC connection to the remote application client
 func (m *Multiplexer) initRemoteGrpcConn(chainInfo config.ChainInfo) (*grpc.ClientConn, error) {
-	// remove tcp:// prefix if present
 	abciServerAddr := strings.TrimPrefix(chainInfo.GRPCAddress, "tcp://")
 
 	conn, err := grpc.NewClient(
@@ -441,22 +439,19 @@ func (m *Multiplexer) startGRPCServer() (*grpc.Server, client.Context, error) {
 
 // getActiveChainIDsFromProvider gets active chain IDs from the provider module
 func (m *Multiplexer) getActiveChainIDsFromProvider(ctx context.Context) ([]string, error) {
-	// Create the query request
 	queryReq := &providertypes.QueryActiveConsumerChainsRequest{}
 	queryReqBytes, err := queryReq.Marshal()
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal query request: %w", err)
 	}
 
-	// Create ABCI query request for active consumer chains
 	abciReq := &abci.RequestQuery{
 		Path:   "/ics.provider.v1.Query/ActiveConsumerChains",
 		Data:   queryReqBytes,
-		Height: 0, // Use latest height
+		Height: 0,
 		Prove:  false,
 	}
 
-	// Query the provider chain
 	abciResp, err := m.providerChain.Query(ctx, abciReq)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query active chains: %w", err)
@@ -466,13 +461,11 @@ func (m *Multiplexer) getActiveChainIDsFromProvider(ctx context.Context) ([]stri
 		return nil, fmt.Errorf("query returned error code %d: %s", abciResp.Code, abciResp.Log)
 	}
 
-	// Decode the response
 	var queryResp providertypes.QueryActiveConsumerChainsResponse
 	if err := queryResp.Unmarshal(abciResp.Value); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal query response: %w", err)
 	}
 
-	// Extract chain IDs
 	var activeChainIDs []string
 	for _, chain := range queryResp.ConsumerChains {
 		activeChainIDs = append(activeChainIDs, chain.ChainId)
@@ -495,43 +488,33 @@ func (m *Multiplexer) validateActiveChains() {
 }
 
 // initChainIfNeeded initializes a chain if it hasn't been initialized yet.
-// On first call for a chain, it checks if the chain has state (already initialized).
-// If the chain has no state, it calls InitChain.
-//
-// Restart Safety: We check if the chain has been initialized by querying its info.
-// This allows us to detect chains that were initialized before a restart.
+// Checks chain state via Info to detect already-initialized chains after restart.
 func (m *Multiplexer) initChainIfNeeded(ctx context.Context, chainID string, req *abci.RequestFinalizeBlock) error {
-	// Check in-memory cache first
 	if m.initializedChains[chainID] {
-		return nil // Already initialized in this session
+		return nil
 	}
 
 	handler, exists := m.chainHandlers[chainID]
 	if !exists {
-		// Chain is active in provider module but not configured in validator
-		// This will be caught by validateActiveChains
 		return fmt.Errorf("chain handler not found for chain_id: %s", chainID)
 	}
 
-	// Check if chain has already been initialized (by querying its info)
-	// If Info returns a non-zero app hash or height, the chain is already initialized
+	// Check if chain has state (already initialized)
 	infoResp, err := handler.app.Info(&abci.RequestInfo{})
 	if err == nil && (infoResp.LastBlockHeight > 0 || len(infoResp.LastBlockAppHash) > 0) {
-		m.logger.Info("Chain already initialized (detected from state)", "chain_id", chainID, "height", infoResp.LastBlockHeight)
+		m.logger.Info("Chain already initialized", "chain_id", chainID, "height", infoResp.LastBlockHeight)
 		m.initializedChains[chainID] = true
 		return nil
 	}
 
 	m.logger.Info("Initializing new consumer chain", "chain_id", chainID, "height", req.Height)
 
-	// Create InitChain request based on current block
-	// Consumer chains don't need consensus params or validators as they inherit from provider
 	initReq := &abci.RequestInitChain{
 		Time:            req.Time,
 		ChainId:         chainID,
-		ConsensusParams: nil,                      // Consumer chains inherit consensus params from provider
-		Validators:      []abci.ValidatorUpdate{}, // Empty validator set for consumer
-		AppStateBytes:   []byte{},                 // Empty state for consumer chain
+		ConsensusParams: nil,
+		Validators:      []abci.ValidatorUpdate{},
+		AppStateBytes:   []byte{},
 		InitialHeight:   req.Height,
 	}
 
@@ -548,26 +531,22 @@ func (m *Multiplexer) initChainIfNeeded(ctx context.Context, chainID string, req
 
 // updateActiveChains updates the list of active chains from the provider module
 func (m *Multiplexer) updateActiveChains(ctx context.Context) error {
-	// Get active chains from provider module
 	activeChainIDs, err := m.getActiveChainIDsFromProvider(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get active chains: %w", err)
 	}
 
-	// Update the active chains map
 	newActiveChains := make(map[string]bool)
 	for _, chainID := range activeChainIDs {
 		newActiveChains[chainID] = true
 	}
 
-	// Log any newly added chains
 	for chainID := range newActiveChains {
 		if !m.activeChains[chainID] {
 			m.logger.Info("New active consumer chain detected", "chain_id", chainID)
 		}
 	}
 
-	// Log any removed chains
 	for chainID := range m.activeChains {
 		if !newActiveChains[chainID] {
 			m.logger.Info("Consumer chain no longer active", "chain_id", chainID)
@@ -595,7 +574,6 @@ func emitServerInfoMetrics() {
 func getCtx(svrCtx *server.Context, block bool) (*errgroup.Group, context.Context) {
 	ctx, cancelFn := context.WithCancel(context.Background())
 	g, ctx := errgroup.WithContext(ctx)
-	// listen for quit signals so the calling parent process can gracefully exit
 	server.ListenForQuitSignals(g, block, cancelFn, svrCtx.Logger)
 	return g, ctx
 }
