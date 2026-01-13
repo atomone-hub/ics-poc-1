@@ -89,8 +89,7 @@ import (
 )
 
 const (
-	AppName     = "interchain-security-p"
-	upgradeName = "ics-v1-to-v2"
+	AppName     = "ics-provider"
 )
 
 // this line is used by starport scaffolding # stargate/wasm/app/enabledProposals
