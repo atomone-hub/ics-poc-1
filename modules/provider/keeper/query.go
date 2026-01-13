@@ -81,3 +81,27 @@ func (q queryServer) ConsumerChains(ctx context.Context, req *types.QueryConsume
 		Pagination:     nil,
 	}, nil
 }
+
+func (q queryServer) ActiveConsumerChains(ctx context.Context, req *types.QueryActiveConsumerChainsRequest) (*types.QueryActiveConsumerChainsResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid request")
+	}
+
+	var activeConsumers []types.ConsumerChain
+
+	// Collect only active consumer chains
+	err := q.k.ConsumerChains.Walk(ctx, nil, func(key string, value types.ConsumerChain) (stop bool, err error) {
+		if value.IsActive() {
+			activeConsumers = append(activeConsumers, value)
+		}
+		return false, nil
+	})
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &types.QueryActiveConsumerChainsResponse{
+		ConsumerChains: activeConsumers,
+		Pagination:     nil,
+	}, nil
+}
