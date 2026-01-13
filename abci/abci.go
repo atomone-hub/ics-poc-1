@@ -52,6 +52,11 @@ func (m *Multiplexer) CheckTx(ctx context.Context, req *abci.RequestCheckTx) (*a
 		return &abci.ResponseCheckTx{Code: 1, Log: fmt.Sprintf("unknown chain: %s", chainID)}, nil
 	}
 
+	// Check if chain is initialized
+	if !m.initializedChains[chainID] {
+		return &abci.ResponseCheckTx{Code: 1, Log: fmt.Sprintf("chain not initialized: %s", chainID)}, nil
+	}
+
 	return handler.app.CheckTx(&strippedReq)
 }
 
@@ -107,6 +112,9 @@ func (m *Multiplexer) InitChain(ctx context.Context, req *abci.RequestInitChain)
 
 		chainHashes[res.chainID] = res.response.AppHash
 
+		// Mark chain as initialized
+		m.initializedChains[res.chainID] = true
+
 		// Only use ConsensusParams and Validators from provider chain
 		if res.chainID == m.providerChainID {
 			response.ConsensusParams = res.response.ConsensusParams
@@ -147,6 +155,11 @@ func (m *Multiplexer) ProcessProposal(ctx context.Context, req *abci.RequestProc
 		// Check if it's provider chain or consumer chain
 		if chainID != m.providerChainID {
 			if _, exists := m.chainHandlers[chainID]; !exists {
+				return &abci.ResponseProcessProposal{Status: abci.ResponseProcessProposal_REJECT}, nil
+			}
+			// Check if chain is initialized
+			if !m.initializedChains[chainID] {
+				m.logger.Warn("Transaction for uninitialized chain in proposal", "chain_id", chainID)
 				return &abci.ResponseProcessProposal{Status: abci.ResponseProcessProposal_REJECT}, nil
 			}
 		}
@@ -224,6 +237,23 @@ func (m *Multiplexer) FinalizeBlock(ctx context.Context, req *abci.RequestFinali
 	// Check halt conditions
 	if err := m.checkHaltConditions(req); err != nil {
 		return nil, fmt.Errorf("failed to finalize block because the node should halt: %w", err)
+	}
+
+	// Update active chains from provider module
+	if err := m.updateActiveChains(ctx); err != nil {
+		m.logger.Error("Failed to update active chains", "error", err)
+		// Don't fail the block, just log the error
+	}
+
+	// Validate that all active chains have handlers configured
+	m.validateActiveChains()
+
+	// Initialize any new active chains
+	for chainID := range m.activeChains {
+		if err := m.initChainIfNeeded(ctx, chainID, req); err != nil {
+			m.logger.Error("Failed to initialize chain", "chain_id", chainID, "error", err)
+			// Continue with other chains
+		}
 	}
 
 	chainTxs := make(map[string][][]byte)
