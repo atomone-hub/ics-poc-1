@@ -151,11 +151,12 @@ func (m *Multiplexer) ProcessProposal(ctx context.Context, req *abci.RequestProc
 		// Check if it's provider chain or consumer chain
 		if chainID != m.providerChainID {
 			if _, exists := m.chainHandlers[chainID]; !exists {
-				return &abci.ResponseProcessProposal{Status: abci.ResponseProcessProposal_REJECT}, nil
+				m.logger.Debug("Transaction for unexisting chain in proposal, skipping...", "chain_id", chainID)
+				continue
 			}
 			if !m.initializedChains[chainID] {
-				m.logger.Warn("Transaction for uninitialized chain in proposal", "chain_id", chainID)
-				return &abci.ResponseProcessProposal{Status: abci.ResponseProcessProposal_REJECT}, nil
+				m.logger.Debug("Transaction for uninitialized chain in proposal, skipping...", "chain_id", chainID)
+				continue
 			}
 		}
 
@@ -402,13 +403,18 @@ func (m *Multiplexer) FinalizeBlock(ctx context.Context, req *abci.RequestFinali
 func (m *Multiplexer) Commit(ctx context.Context, req *abci.RequestCommit) (*abci.ResponseCommit, error) {
 	m.logger.Debug("Commit")
 
-	// Provider always first
 	response, err := m.providerChain.Commit()
 	if err != nil {
 		return nil, err
 	}
 
 	for chainID, handler := range m.chainHandlers {
+		// Only commit if the chain has been initialized
+		if !m.initializedChains[chainID] {
+			m.logger.Debug("Skipping Commit for uninitialized chain", "chain_id", chainID)
+			continue
+		}
+
 		resp, err := handler.app.Commit()
 		if err != nil {
 			m.logger.Error("Commit failed for consumer chain", "chain_id", chainID, "error", err) // TODO: we should check how to recover from this.
