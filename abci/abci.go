@@ -13,13 +13,12 @@ import (
 // Additionally, because the consensus is the one inherited from the provider chains, consumer chains,
 // regardless when they are started will share the same block height as the provider chain.
 func (m *Multiplexer) Info(ctx context.Context, req *abci.RequestInfo) (*abci.ResponseInfo, error) {
-	m.logger.Debug("Info")
+	m.logger.Debug("Info", "chain_id", m.providerChainID)
 	return m.providerChain.Info(req)
 }
 
 func (m *Multiplexer) Query(ctx context.Context, req *abci.RequestQuery) (*abci.ResponseQuery, error) {
 	m.logger.Debug("Query", "chain_id", req.ChainId)
-
 	if req.ChainId == m.providerChainID {
 		return m.providerChain.Query(ctx, req)
 	}
@@ -76,19 +75,16 @@ func (m *Multiplexer) InitChain(ctx context.Context, req *abci.RequestInitChain)
 
 	// Call provider chain first
 	wg.Go(func() {
-		defer wg.Done()
 		resp, err := m.providerChain.InitChain(req)
 		results <- result{chainID: req.ChainId, response: resp, err: err}
 	})
 
 	// Then call consumer chains
 	for chainID, handler := range m.chainHandlers {
-		wg.Add(1)
-		go func(id string, h *ChainHandler) {
-			defer wg.Done()
-			resp, err := h.app.InitChain(req)
-			results <- result{chainID: id, response: resp, err: err}
-		}(chainID, handler)
+		wg.Go(func() {
+			resp, err := handler.app.InitChain(req)
+			results <- result{chainID: chainID, response: resp, err: err}
+		})
 	}
 
 	go func() {
@@ -103,11 +99,10 @@ func (m *Multiplexer) InitChain(ctx context.Context, req *abci.RequestInitChain)
 		if res.err != nil {
 			if res.chainID == m.providerChainID {
 				return nil, res.err
-			} else {
-				m.logger.Error("FinalizeBlock failed for consumer chain, skipping block for this chain",
-					"chain_id", res.chainID, "error", res.err)
-				continue
 			}
+			m.logger.Error("InitChain failed for consumer chain, skipping",
+				"chain_id", res.chainID, "error", res.err)
+			continue
 		}
 
 		chainHashes[res.chainID] = res.response.AppHash
@@ -177,26 +172,23 @@ func (m *Multiplexer) ProcessProposal(ctx context.Context, req *abci.RequestProc
 	var wg sync.WaitGroup
 
 	for chainID, txs := range chainTxs {
-		wg.Add(1)
-		go func(id string, transactions [][]byte) {
-			defer wg.Done()
-
+		wg.Go(func() {
 			chainReq := *req
-			chainReq.Txs = transactions
+			chainReq.Txs = txs
 
 			var resp *abci.ResponseProcessProposal
 			var err error
 
 			// Call provider chain or consumer chain
-			if id == m.providerChainID {
+			if chainID == m.providerChainID {
 				resp, err = m.providerChain.ProcessProposal(&chainReq)
 			} else {
-				handler := m.chainHandlers[id]
+				handler := m.chainHandlers[chainID]
 				resp, err = handler.app.ProcessProposal(&chainReq)
 			}
 
-			results <- result{chainID: id, response: resp, err: err}
-		}(chainID, txs)
+			results <- result{chainID: chainID, response: resp, err: err}
+		})
 	}
 
 	go func() {
@@ -250,7 +242,7 @@ func (m *Multiplexer) FinalizeBlock(ctx context.Context, req *abci.RequestFinali
 
 	// Initialize any new active chains
 	for chainID := range m.activeChains {
-		if err := m.initChainIfNeeded(ctx, chainID, req); err != nil {
+		if err := m.initChainIfNeeded(chainID, req); err != nil {
 			m.logger.Error("Failed to initialize chain", "chain_id", chainID, "error", err)
 			// Continue with other chains
 		}
@@ -302,31 +294,29 @@ func (m *Multiplexer) FinalizeBlock(ctx context.Context, req *abci.RequestFinali
 	var wg sync.WaitGroup
 
 	for chainID, txs := range chainTxs {
-		wg.Add(1)
-		go func(id string, transactions [][]byte, positions []int) {
-			defer wg.Done()
-
+		positions := txPositions[chainID]
+		wg.Go(func() {
 			chainReq := *req
-			chainReq.Txs = transactions
+			chainReq.Txs = txs
 
 			var resp *abci.ResponseFinalizeBlock
 			var err error
 
 			// Call provider chain or consumer chain
-			if id == m.providerChainID {
+			if chainID == m.providerChainID {
 				resp, err = m.providerChain.FinalizeBlock(&chainReq)
 			} else {
-				handler := m.chainHandlers[id]
+				handler := m.chainHandlers[chainID]
 				resp, err = handler.app.FinalizeBlock(&chainReq)
 			}
 
 			results <- result{
-				chainID:   id,
+				chainID:   chainID,
 				response:  resp,
 				positions: positions,
 				err:       err,
 			}
-		}(chainID, txs, txPositions[chainID])
+		})
 	}
 
 	go func() {

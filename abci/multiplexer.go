@@ -61,8 +61,8 @@ type Multiplexer struct {
 	svrCfg serverconfig.Config
 	// clientContext is used to configure the different services managed by the multiplexer.
 	clientContext client.Context
-	// appCreator is a function type responsible for creating the provider chain.
-	appCreator servertypes.AppCreator
+	// providerCreator is a function type responsible for creating the provider chain.
+	providerCreator servertypes.AppCreator
 	// providerChain is the native provider chain.
 	providerChain servertypes.Application
 	// providerChainID is the chain ID of the provider chain.
@@ -95,7 +95,7 @@ func NewMultiplexer(
 	svrCtx *server.Context,
 	svrCfg serverconfig.Config,
 	clientCtx client.Context,
-	appCreator servertypes.AppCreator,
+	providerCreator servertypes.AppCreator,
 	chainConfig config.Config,
 ) (*Multiplexer, error) {
 	if len(chainConfig.Chains) == 0 {
@@ -106,7 +106,7 @@ func NewMultiplexer(
 		svrCtx:                 svrCtx,
 		svrCfg:                 svrCfg,
 		clientContext:          clientCtx,
-		appCreator:             appCreator,
+		providerCreator:        providerCreator,
 		logger:                 svrCtx.Logger.With("module", "multiplexer"),
 		chainHandlers:          make(map[string]*ChainHandler, len(chainConfig.Chains)),
 		rejectedConsumerChains: make(map[string]bool),
@@ -170,7 +170,7 @@ func (m *Multiplexer) startNativeProvider() error {
 		return err
 	}
 
-	m.providerChain = m.appCreator(m.logger, db, m.traceWriter, m.svrCtx.Viper)
+	m.providerChain = m.providerCreator(m.logger, db, m.traceWriter, m.svrCtx.Viper)
 	m.providerChainID = getProviderChainID(m.svrCtx.Viper)
 
 	return nil
@@ -489,7 +489,7 @@ func (m *Multiplexer) validateActiveChains() {
 
 // initChainIfNeeded initializes a chain if it hasn't been initialized yet.
 // Checks chain state via Info to detect already-initialized chains after restart.
-func (m *Multiplexer) initChainIfNeeded(ctx context.Context, chainID string, req *abci.RequestFinalizeBlock) error {
+func (m *Multiplexer) initChainIfNeeded(chainID string, req *abci.RequestFinalizeBlock) error {
 	if m.initializedChains[chainID] {
 		return nil
 	}
