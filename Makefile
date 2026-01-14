@@ -34,8 +34,8 @@ provider-start: build
 	# Decrease voting period to 5min
 	jq '.app_state.gov.params.voting_period = "300s"' $(provider_home)/config/genesis.json > /tmp/gen
 	mv /tmp/gen $(provider_home)/config/genesis.json
-	printf "[[chains]]\nchain_id = \"consumer-localnet\"\ngrpc_address = \"tcp://localhost:36659\"\n" > $(provider_home)/config/ics.toml
-	$(providerd) start --rpc.grpc_laddr tcp://127.0.0.1:36658 --log_level "debug"
+	printf "[[chains]]\nchain_id = \"consumer-localnet\"\ngrpc_address = \"tcp://localhost:26658\"\n" > $(provider_home)/config/ics.toml
+	$(providerd) start --rpc.grpc_laddr tcp://127.0.0.1:36658
 
 consumer_home=~/.consumer-localnet
 consumerd=./build/consumer --home $(consumer_home)
@@ -59,7 +59,7 @@ consumer-start: build
 	# Decrease voting period to 5min
 	jq '.app_state.gov.params.voting_period = "300s"' $(consumer_home)/config/genesis.json > /tmp/gen
 	mv /tmp/gen $(consumer_home)/config/genesis.json
-	$(consumerd) start --with-comet=false --rpc.grpc_laddr tcp://127.0.0.1:36659 --log_level "debug"
+	$(consumerd) start --with-comet=false --transport=grpc --rpc.grpc_laddr tcp://127.0.0.1:36659 --grpc.enable=false --log_level "debug"
 
 # Run unit tests
 test:
