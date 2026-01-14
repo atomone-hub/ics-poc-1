@@ -105,8 +105,9 @@ func NewMultiplexer(
 	providerCreator servertypes.AppCreator,
 	chainConfig config.Config,
 ) (*Multiplexer, error) {
+	logger := svrCtx.Logger.With("module", "multiplexer")
 	if len(chainConfig.Chains) == 0 {
-		return nil, fmt.Errorf("at least one chain required")
+		logger.Warn("no chains configured in multiplexer", "config", chainConfig)
 	}
 
 	mp := &Multiplexer{
@@ -114,7 +115,7 @@ func NewMultiplexer(
 		svrCfg:                 svrCfg,
 		clientContext:          clientCtx,
 		providerCreator:        providerCreator,
-		logger:                 svrCtx.Logger.With("module", "multiplexer"),
+		logger:                 logger,
 		chainHandlers:          make(map[string]*ChainHandler, len(chainConfig.Chains)),
 		rejectedConsumerChains: make(map[string]bool),
 		initializedChains:      make(map[string]bool),
