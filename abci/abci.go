@@ -137,6 +137,23 @@ func (m *Multiplexer) PrepareProposal(ctx context.Context, req *abci.RequestPrep
 func (m *Multiplexer) ProcessProposal(ctx context.Context, req *abci.RequestProcessProposal) (*abci.ResponseProcessProposal, error) {
 	m.logger.Debug("ProcessProposal", "num_txs", len(req.Txs))
 
+	// Update active chains from provider module
+	if err := m.updateActiveChains(ctx); err != nil {
+		m.logger.Error("Failed to update active chains", "error", err)
+		// Don't fail the proposal, just log the error
+	}
+
+	// Validate that all active chains have handlers configured
+	m.validateActiveChains()
+
+	// Initialize any new active chains
+	for chainID := range m.activeChains {
+		if err := m.initChainIfNeeded(chainID, req.Height, req.Time); err != nil {
+			m.logger.Error("Failed to initialize chain", "chain_id", chainID, "error", err)
+			// Continue with other chains
+		}
+	}
+
 	chainTxs := make(map[string][][]byte)
 
 	for _, tx := range req.Txs {
@@ -226,23 +243,6 @@ func (m *Multiplexer) FinalizeBlock(ctx context.Context, req *abci.RequestFinali
 	// Check halt conditions
 	if err := m.checkHaltConditions(req); err != nil {
 		return nil, fmt.Errorf("failed to finalize block because the node should halt: %w", err)
-	}
-
-	// Update active chains from provider module
-	if err := m.updateActiveChains(ctx); err != nil {
-		m.logger.Error("Failed to update active chains", "error", err)
-		// Don't fail the block, just log the error
-	}
-
-	// Validate that all active chains have handlers configured
-	m.validateActiveChains()
-
-	// Initialize any new active chains
-	for chainID := range m.activeChains {
-		if err := m.initChainIfNeeded(chainID, req); err != nil {
-			m.logger.Error("Failed to initialize chain", "chain_id", chainID, "error", err)
-			// Continue with other chains
-		}
 	}
 
 	chainTxs := make(map[string][][]byte)

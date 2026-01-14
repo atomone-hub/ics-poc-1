@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"cosmossdk.io/log"
 	"github.com/atomone-hub/ics-poc-1/config"
@@ -489,7 +490,7 @@ func (m *Multiplexer) validateActiveChains() {
 
 // initChainIfNeeded initializes a chain if it hasn't been initialized yet.
 // Checks chain state via Info to detect already-initialized chains after restart.
-func (m *Multiplexer) initChainIfNeeded(chainID string, req *abci.RequestFinalizeBlock) error {
+func (m *Multiplexer) initChainIfNeeded(chainID string, height int64, blockTime time.Time) error {
 	if m.initializedChains[chainID] {
 		return nil
 	}
@@ -507,15 +508,15 @@ func (m *Multiplexer) initChainIfNeeded(chainID string, req *abci.RequestFinaliz
 		return nil
 	}
 
-	m.logger.Info("Initializing new consumer chain", "chain_id", chainID, "height", req.Height)
+	m.logger.Info("Initializing new consumer chain", "chain_id", chainID, "height", height)
 
 	initReq := &abci.RequestInitChain{
-		Time:            req.Time,
+		Time:            blockTime,
 		ChainId:         chainID,
 		ConsensusParams: nil,
 		Validators:      []abci.ValidatorUpdate{},
 		AppStateBytes:   []byte{},
-		InitialHeight:   req.Height,
+		InitialHeight:   height,
 	}
 
 	_, err = handler.app.InitChain(initReq)
