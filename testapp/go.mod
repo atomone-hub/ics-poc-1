@@ -1,10 +1,11 @@
 module github.com/atomone-hub/ics-poc-1/testapp
 
-go 1.25.4
+go 1.25.5
 
 replace (
 	cosmossdk.io/store => github.com/atomone-hub/cosmos-sdk/store v1.1.2-0.20260107105933-680c2b513b67
 	github.com/atomone-hub/ics-poc-1 => ../
+	github.com/atomone-hub/ics-poc-1/modules/consumer => ../modules/consumer
 	github.com/cometbft/cometbft => github.com/atomone-hub/cometbft v0.0.0-20251216151559-a24cfa28b916
 	github.com/cosmos/cosmos-sdk => github.com/atomone-hub/cosmos-sdk v0.50.14-atomone.1.0.20260107105933-680c2b513b67
 	github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
@@ -22,6 +23,7 @@ require (
 	cosmossdk.io/tools/confix v0.1.2
 	cosmossdk.io/x/tx v1.2.0-alpha.1
 	github.com/atomone-hub/ics-poc-1 v0.0.0-00010101000000-000000000000
+	github.com/atomone-hub/ics-poc-1/modules/consumer v0.0.0-00010101000000-000000000000
 	github.com/cometbft/cometbft v0.38.20
 	github.com/cosmos/cosmos-db v1.1.3
 	github.com/cosmos/cosmos-sdk v0.54.0-alpha.0.0.20250611155041-9fa93c9afe32
@@ -140,7 +142,7 @@ require (
 	github.com/gofrs/flock v0.12.1 // indirect
 	github.com/gogo/googleapis v1.4.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
-	github.com/golang/mock v1.6.0 // indirect
+	github.com/golang/mock v1.7.0-rc.1 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/golang/snappy v1.0.0 // indirect
 	github.com/golangci/dupl v0.0.0-20250308024227-f665c8d69b32 // indirect
