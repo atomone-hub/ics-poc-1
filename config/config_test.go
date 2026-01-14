@@ -26,16 +26,16 @@ func TestLoadConfig_WithValidFile(t *testing.T) {
 	if cfg.Chains[0].ChainID != "chain-1" {
 		t.Errorf("expected chain_id 'chain-1', got '%s'", cfg.Chains[0].ChainID)
 	}
-	if cfg.Chains[0].GRPCAddress != "grpc://localhost:9090" {
-		t.Errorf("expected address 'grpc://localhost:9090', got '%s'", cfg.Chains[0].GRPCAddress)
+	if cfg.Chains[0].GRPCAddress != "tcp://localhost:9090" {
+		t.Errorf("expected address 'tcp://localhost:9090', got '%s'", cfg.Chains[0].GRPCAddress)
 	}
 
 	// Verify second chain
 	if cfg.Chains[1].ChainID != "chain-2" {
 		t.Errorf("expected chain_id 'chain-2', got '%s'", cfg.Chains[1].ChainID)
 	}
-	if cfg.Chains[1].GRPCAddress != "grpc://localhost:9091" {
-		t.Errorf("expected address 'grpc://localhost:9091', got '%s'", cfg.Chains[1].GRPCAddress)
+	if cfg.Chains[1].GRPCAddress != "tcp://localhost:9091" {
+		t.Errorf("expected address 'tcp://localhost:9091', got '%s'", cfg.Chains[1].GRPCAddress)
 	}
 }
 
