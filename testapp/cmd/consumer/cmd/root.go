@@ -36,15 +36,15 @@ import (
 
 	cmtcfg "github.com/cometbft/cometbft/config"
 
-	providerApp "github.com/atomone-hub/ics-poc-1/testapp/provider"
-	appEncoding "github.com/atomone-hub/ics-poc-1/testapp/provider/encoding"
+	consumerApp "github.com/atomone-hub/ics-poc-1/testapp/consumer"
+	appEncoding "github.com/atomone-hub/ics-poc-1/testapp/consumer/encoding"
 )
 
 // NewRootCmd creates a new root command for simd. It is called once in the
 // main function.
 func NewRootCmd() *cobra.Command {
 	// we "pre"-instantiate the application for getting the injected/configured encoding configuration
-	tempApp := providerApp.New(log.NewNopLogger(), dbm.NewMemDB(), nil, true, simtestutil.NewAppOptionsWithFlagHome(tempDir()))
+	tempApp := consumerApp.New(log.NewNopLogger(), dbm.NewMemDB(), nil, true, simtestutil.NewAppOptionsWithFlagHome(tempDir()))
 	encodingConfig := appEncoding.EncodingConfig{
 		InterfaceRegistry: tempApp.InterfaceRegistry(),
 		Codec:             tempApp.AppCodec(),
@@ -58,7 +58,7 @@ func NewRootCmd() *cobra.Command {
 		WithLegacyAmino(encodingConfig.Amino).
 		WithInput(os.Stdin).
 		WithAccountRetriever(types.AccountRetriever{}).
-		WithHomeDir(providerApp.DefaultNodeHome).
+		WithHomeDir(consumerApp.DefaultNodeHome).
 		WithViper("") // In simapp, we don't use any prefix for env variables.
 
 	rootCmd := &cobra.Command{
@@ -207,14 +207,14 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig appEncoding.EncodingConf
 	cfg.Seal()
 
 	rootCmd.AddCommand(
-		genutilcli.InitCmd(providerApp.ModuleBasics, providerApp.DefaultNodeHome),
+		genutilcli.InitCmd(consumerApp.ModuleBasics, consumerApp.DefaultNodeHome),
 		debug.Cmd(),
-		pruning.Cmd(newApp, providerApp.DefaultNodeHome),
+		pruning.Cmd(newApp, consumerApp.DefaultNodeHome),
 		confixcmd.ConfigCommand(),
 		server.QueryBlockResultsCmd(),
 	)
 
-	server.AddCommands(rootCmd, providerApp.DefaultNodeHome, newApp, appExport, addModuleInitFlags)
+	server.AddCommands(rootCmd, consumerApp.DefaultNodeHome, newApp, appExport, addModuleInitFlags)
 
 	// add keybase, auxiliary RPC, query, genesis, and tx child commands
 	rootCmd.AddCommand(
@@ -274,14 +274,14 @@ func txCommand() *cobra.Command {
 
 	// NOTE: this must be registered for now so that submit-legacy-proposal
 	// message can be routed to the provider handler and processed correctly.
-	providerApp.ModuleBasics.AddTxCommands(cmd)
+	consumerApp.ModuleBasics.AddTxCommands(cmd)
 
 	return cmd
 }
 
 // genesisCommand builds genesis-related `simd genesis` command. Users may provide application specific commands as a parameter
 func genesisCommand(encodingConfig appEncoding.EncodingConfig, cmds ...*cobra.Command) *cobra.Command {
-	cmd := genutilcli.GenesisCoreCommand(encodingConfig.TxConfig, providerApp.ModuleBasics, providerApp.DefaultNodeHome)
+	cmd := genutilcli.GenesisCoreCommand(encodingConfig.TxConfig, consumerApp.ModuleBasics, consumerApp.DefaultNodeHome)
 	for _, sub_cmd := range cmds {
 		cmd.AddCommand(sub_cmd)
 	}
@@ -298,7 +298,7 @@ func newApp(
 ) servertypes.Application {
 	baseappOptions := server.DefaultBaseappOptions(appOpts)
 
-	return providerApp.New(
+	return consumerApp.New(
 		logger, db, traceStore, true,
 		appOpts,
 		baseappOptions...,
@@ -316,7 +316,7 @@ func appExport(
 	appOpts servertypes.AppOptions,
 	modulesToExport []string,
 ) (servertypes.ExportedApp, error) {
-	var simApp *providerApp.App
+	var simApp *consumerApp.App
 
 	// this check is necessary as we use the flag in x/upgrade.
 	// we can exit more gracefully by checking the flag here.
@@ -335,22 +335,22 @@ func appExport(
 	appOpts = viperAppOpts
 
 	if height != -1 {
-		simApp = providerApp.New(logger, db, traceStore, false, appOpts)
+		simApp = consumerApp.New(logger, db, traceStore, false, appOpts)
 
 		if err := simApp.LoadHeight(height); err != nil {
 			return servertypes.ExportedApp{}, err
 		}
 	} else {
-		simApp = providerApp.New(logger, db, traceStore, true, appOpts)
+		simApp = consumerApp.New(logger, db, traceStore, true, appOpts)
 	}
 
 	return simApp.ExportAppStateAndValidators(forZeroHeight, jailAllowedAddrs, modulesToExport)
 }
 
 var tempDir = func() string {
-	dir, err := os.MkdirTemp("", "."+providerApp.AppName)
+	dir, err := os.MkdirTemp("", "."+consumerApp.AppName)
 	if err != nil {
-		dir = providerApp.DefaultNodeHome
+		dir = consumerApp.DefaultNodeHome
 	}
 	defer os.RemoveAll(dir)
 

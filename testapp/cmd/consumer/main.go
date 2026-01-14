@@ -8,7 +8,7 @@ import (
 
 	"github.com/atomone-hub/ics-poc-1/testapp/cmd/consumer/cmd"
 	app "github.com/atomone-hub/ics-poc-1/testapp/consumer"
-	appparams "github.com/atomone-hub/ics-poc-1/testapp/provider/params"
+	appparams "github.com/atomone-hub/ics-poc-1/testapp/consumer/params"
 )
 
 func main() {

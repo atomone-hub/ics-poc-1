@@ -373,17 +373,17 @@ func New(
 		params.NewAppModule(app.ParamsKeeper),
 	)
 
-	// // NOTE: @Msalopek -> ModuleBasic override is happening because Tx commands don't work without it
-	// ModuleBasics = module.NewBasicManagerFromManager(
-	// 	app.MM,
-	// 	map[string]module.AppModuleBasic{
-	// 		genutiltypes.ModuleName: genutil.NewAppModuleBasic(genutiltypes.DefaultMessageValidator),
-	// 		govtypes.ModuleName: gov.NewAppModuleBasic(
-	// 			[]govclient.ProposalHandler{
-	// 				paramsclient.ProposalHandler,
-	// 			},
-	// 		),
-	// 	})
+	// NOTE: @Msalopek -> ModuleBasic override is happening because Tx commands don't work without it
+	ModuleBasics = module.NewBasicManagerFromManager(
+		app.MM,
+		map[string]module.AppModuleBasic{
+			genutiltypes.ModuleName: genutil.NewAppModuleBasic(genutiltypes.DefaultMessageValidator),
+			govtypes.ModuleName: gov.NewAppModuleBasic(
+				[]govclient.ProposalHandler{
+					paramsclient.ProposalHandler,
+				},
+			),
+		})
 	ModuleBasics.RegisterLegacyAminoCodec(app.legacyAmino)
 	ModuleBasics.RegisterInterfaces(app.interfaceRegistry)
 
