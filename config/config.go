@@ -16,7 +16,6 @@ type Config struct {
 // ChainInfo represents configuration for a single consumer chain
 type ChainInfo struct {
 	ChainID     string `mapstructure:"chain_id"`
-	Home        string `mapstructure:"home"`
 	GRPCAddress string `mapstructure:"grpc_address"`
 }
 
