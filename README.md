@@ -14,21 +14,7 @@ payload to the appropriate chain application.
 
 ## Config
 
-```toml
-    log_level = "info"
-
-    [[apps]]
-    chain_id = "chain-1"
-    address = "unix:///tmp/chain1.sock"
-    connection_type = "socket"
-    home = "/tmp/chain1"
-
-    [[apps]]
-    chain_id = "chain-2"
-    address = "unix:///tmp/chain2.sock"
-    connection_type = "socket"
-    home = "/tmp/chain2"
-```
+An example config can be found [here](https://github.com/atomone-hub/ics-poc-1/blob/main/config/testdata/config.toml).
 
 ## Queries
 
