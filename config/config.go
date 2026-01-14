@@ -40,8 +40,6 @@ func DefaultConfig() *Config {
 
 func LoadConfig(configFile string) (*Config, error) {
 	config := DefaultConfig()
-	
-	fmt.Println(configFile)
 	if configFile == "" {
 		return config, nil
 	}
