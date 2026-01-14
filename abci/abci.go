@@ -140,23 +140,6 @@ func (m *Multiplexer) PrepareProposal(ctx context.Context, req *abci.RequestPrep
 func (m *Multiplexer) ProcessProposal(ctx context.Context, req *abci.RequestProcessProposal) (*abci.ResponseProcessProposal, error) {
 	m.logger.Debug("ProcessProposal", "num_txs", len(req.Txs))
 
-	// Update active chains from provider module
-	if err := m.updateActiveChains(ctx); err != nil {
-		m.logger.Error("Failed to update active chains", "error", err)
-		// Don't fail the proposal, just log the error
-	}
-
-	// Validate that all active chains have handlers configured
-	m.validateActiveChains()
-
-	// Initialize any new active chains
-	for chainID := range m.activeChains {
-		if err := m.initChainIfNeeded(chainID, req.Height, req.Time); err != nil {
-			m.logger.Error("Failed to initialize chain", "chain_id", chainID, "error", err)
-			// Continue with other chains
-		}
-	}
-
 	chainTxs := make(map[string][][]byte)
 
 	for _, tx := range req.Txs {
@@ -248,6 +231,7 @@ func (m *Multiplexer) FinalizeBlock(ctx context.Context, req *abci.RequestFinali
 		return nil, fmt.Errorf("failed to finalize block because the node should halt: %w", err)
 	}
 
+	// Parse and categorize transactions by chain
 	chainTxs := make(map[string][][]byte)
 	txPositions := make(map[string][]int)
 	skippedTxIndices := make([]int, 0)
@@ -281,55 +265,9 @@ func (m *Multiplexer) FinalizeBlock(ctx context.Context, req *abci.RequestFinali
 		}
 	}
 
-	type result struct {
-		chainID   string
-		response  *abci.ResponseFinalizeBlock
-		positions []int
-		err       error
-	}
-
-	// Count provider + consumer chains that have transactions
-	numChains := len(chainTxs)
-	results := make(chan result, numChains)
-	var wg sync.WaitGroup
-
-	for chainID, txs := range chainTxs {
-		positions := txPositions[chainID]
-		wg.Go(func() {
-			chainReq := *req
-			chainReq.Txs = txs
-
-			var resp *abci.ResponseFinalizeBlock
-			var err error
-
-			// Call provider chain or consumer chain
-			if chainID == m.providerChainID {
-				resp, err = m.providerChain.FinalizeBlock(&chainReq)
-			} else {
-				handler := m.chainHandlers[chainID]
-				resp, err = handler.app.FinalizeBlock(&chainReq)
-			}
-
-			results <- result{
-				chainID:   chainID,
-				response:  resp,
-				positions: positions,
-				err:       err,
-			}
-		})
-	}
-
-	go func() {
-		wg.Wait()
-		close(results)
-	}()
-
 	response := &abci.ResponseFinalizeBlock{
 		TxResults: make([]*abci.ExecTxResult, len(req.Txs)),
 	}
-
-	chainHashes := make(map[string][]byte)
-	var events []abci.Event
 
 	// Mark skipped transactions with error results
 	for _, idx := range skippedTxIndices {
@@ -339,30 +277,105 @@ func (m *Multiplexer) FinalizeBlock(ctx context.Context, req *abci.RequestFinali
 		}
 	}
 
-	for res := range results {
-		if res.err != nil {
-			if res.chainID == m.providerChainID {
-				return nil, res.err
-			} else {
+	chainHashes := make(map[string][]byte)
+	var events []abci.Event
+
+	// ALWAYS call FinalizeBlock on provider chain first (even with no transactions)
+	// This ensures provider state is properly set up before Commit
+	providerReq := *req
+	providerReq.Txs = chainTxs[m.providerChainID] // may be nil/empty, that's ok
+	providerResp, err := m.providerChain.FinalizeBlock(&providerReq)
+	if err != nil {
+		return nil, fmt.Errorf("provider chain FinalizeBlock failed: %w", err)
+	}
+
+	// Store provider results
+	chainHashes[m.providerChainID] = providerResp.AppHash
+	events = append(events, providerResp.Events...)
+	response.ConsensusParamUpdates = providerResp.ConsensusParamUpdates
+	response.ValidatorUpdates = append(response.ValidatorUpdates, providerResp.ValidatorUpdates...)
+
+	// Map provider tx results to their original positions
+	for i, pos := range txPositions[m.providerChainID] {
+		if i < len(providerResp.TxResults) {
+			response.TxResults[pos] = providerResp.TxResults[i]
+		}
+	}
+
+	// Now that provider FinalizeBlock is done, we can query for active chains
+	if err := m.updateActiveChains(ctx); err != nil {
+		m.logger.Error("Failed to update active chains", "error", err)
+	}
+
+	m.validateActiveChains()
+
+	// Initialize any new active chains
+	for chainID := range m.activeChains {
+		if err := m.initChainIfNeeded(chainID, req.Height, req.Time); err != nil {
+			m.logger.Error("Failed to initialize chain", "chain_id", chainID, "error", err)
+		}
+	}
+
+	type result struct {
+		chainID   string
+		response  *abci.ResponseFinalizeBlock
+		positions []int
+		err       error
+	}
+
+	// Count consumer chains that have transactions
+	numConsumerChains := 0
+	for chainID := range chainTxs {
+		if chainID != m.providerChainID {
+			numConsumerChains++
+		}
+	}
+
+	if numConsumerChains > 0 {
+		results := make(chan result, numConsumerChains)
+		var wg sync.WaitGroup
+
+		for chainID, txs := range chainTxs {
+			if chainID == m.providerChainID {
+				continue // already processed
+			}
+			positions := txPositions[chainID]
+			wg.Go(func() {
+				chainReq := *req
+				chainReq.Txs = txs
+
+				handler := m.chainHandlers[chainID]
+				resp, err := handler.app.FinalizeBlock(&chainReq)
+
+				results <- result{
+					chainID:   chainID,
+					response:  resp,
+					positions: positions,
+					err:       err,
+				}
+			})
+		}
+
+		go func() {
+			wg.Wait()
+			close(results)
+		}()
+
+		for res := range results {
+			if res.err != nil {
 				m.logger.Error("FinalizeBlock failed for consumer chain, skipping block for this chain",
 					"chain_id", res.chainID, "error", res.err)
 				continue
 			}
-		}
 
-		for i, pos := range res.positions {
-			if i < len(res.response.TxResults) {
-				response.TxResults[pos] = res.response.TxResults[i]
+			for i, pos := range res.positions {
+				if i < len(res.response.TxResults) {
+					response.TxResults[pos] = res.response.TxResults[i]
+				}
 			}
-		}
 
-		chainHashes[res.chainID] = res.response.AppHash
-		events = append(events, res.response.Events...)
-
-		// Only use ConsensusParamUpdates and ValidatorUpdates from provider chain
-		if res.chainID == m.providerChainID {
-			response.ConsensusParamUpdates = res.response.ConsensusParamUpdates
-			response.ValidatorUpdates = append(response.ValidatorUpdates, res.response.ValidatorUpdates...)
+			chainHashes[res.chainID] = res.response.AppHash
+			events = append(events, res.response.Events...)
 		}
 	}
 
@@ -389,13 +402,12 @@ func (m *Multiplexer) FinalizeBlock(ctx context.Context, req *abci.RequestFinali
 func (m *Multiplexer) Commit(ctx context.Context, req *abci.RequestCommit) (*abci.ResponseCommit, error) {
 	m.logger.Debug("Commit")
 
-	// Call provider chain first
+	// Provider always first
 	response, err := m.providerChain.Commit()
 	if err != nil {
 		return nil, err
 	}
 
-	// Then call consumer chains
 	for chainID, handler := range m.chainHandlers {
 		resp, err := handler.app.Commit()
 		if err != nil {
