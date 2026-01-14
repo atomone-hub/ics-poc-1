@@ -81,7 +81,10 @@ func (m *Multiplexer) InitChain(ctx context.Context, req *abci.RequestInitChain)
 	// Then call consumer chains
 	for chainID, handler := range m.chainHandlers {
 		wg.Go(func() {
-			resp, err := handler.app.InitChain(req)
+			consumerReq := *req
+			consumerReq.ChainId = chainID
+
+			resp, err := handler.app.InitChain(&consumerReq)
 			results <- result{chainID: chainID, response: resp, err: err}
 		})
 	}

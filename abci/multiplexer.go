@@ -17,11 +17,13 @@ import (
 	"github.com/atomone-hub/ics-poc-1/config"
 	abci "github.com/cometbft/cometbft/abci/types"
 	cmtcfg "github.com/cometbft/cometbft/config"
+	"github.com/cometbft/cometbft/crypto/encoding"
 	"github.com/cometbft/cometbft/node"
 	"github.com/cometbft/cometbft/p2p"
 	pvm "github.com/cometbft/cometbft/privval"
 	"github.com/cometbft/cometbft/proxy"
 	"github.com/cometbft/cometbft/rpc/client/local"
+	cmttypes "github.com/cometbft/cometbft/types"
 	db "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -76,6 +78,10 @@ type Multiplexer struct {
 	initializedChains map[string]bool
 	// activeChains tracks the list of active chains from the provider module
 	activeChains map[string]bool
+	// genesisValidators stores the initial validators from InitChain for use with dynamic consumer chains
+	genesisValidators []abci.ValidatorUpdate
+	// genesisConsensusParams stores the initial consensus params from InitChain for use with dynamic consumer chains
+	genesisConsensusParams *cmttypes.ConsensusParams
 	// cmNode is the comet node which has been created (of the provider chain).
 	cmNode *node.Node
 	// ctx is the context which is passed to the comet, grpc and api server starting functions.
@@ -174,6 +180,35 @@ func (m *Multiplexer) startNativeProvider() error {
 	m.providerChain = m.providerCreator(m.logger, db, m.traceWriter, m.svrCtx.Viper)
 	m.providerChainID = getProviderChainID(m.svrCtx.Viper)
 
+	if err := m.loadGenesisValues(); err != nil {
+		return fmt.Errorf("failed to load genesis values: %w", err)
+	}
+
+	return nil
+}
+
+// loadGenesisValues loads validators and consensus params from the genesis document.
+func (m *Multiplexer) loadGenesisValues() error {
+	genDocProvider := GetGenDocProvider(m.svrCtx.Config)
+	genDoc, err := genDocProvider()
+	if err != nil {
+		return fmt.Errorf("failed to load genesis doc: %w", err)
+	}
+
+	// Convert genesis validators to ABCI validator updates
+	m.genesisValidators = make([]abci.ValidatorUpdate, 0, len(genDoc.Validators))
+	for _, val := range genDoc.Validators {
+		pubKey, err := encoding.PubKeyToProto(val.PubKey)
+		if err != nil {
+			return fmt.Errorf("failed to convert validator pubkey: %w", err)
+		}
+		m.genesisValidators = append(m.genesisValidators, abci.ValidatorUpdate{
+			PubKey: pubKey,
+			Power:  val.Power,
+		})
+	}
+
+	m.genesisConsensusParams = genDoc.ConsensusParams
 	return nil
 }
 
@@ -510,11 +545,18 @@ func (m *Multiplexer) initChainIfNeeded(chainID string, height int64, blockTime 
 
 	m.logger.Info("Initializing new consumer chain", "chain_id", chainID, "height", height)
 
+	// Use stored genesis values, falling back to defaults if not available
+	consensusParams := m.genesisConsensusParams
+	if consensusParams == nil {
+		consensusParams = cmttypes.DefaultConsensusParams()
+	}
+
+	protoConsensusParams := consensusParams.ToProto()
 	initReq := &abci.RequestInitChain{
 		Time:            blockTime,
 		ChainId:         chainID,
-		ConsensusParams: nil,
-		Validators:      []abci.ValidatorUpdate{},
+		ConsensusParams: &protoConsensusParams,
+		Validators:      m.genesisValidators,
 		AppStateBytes:   []byte{},
 		InitialHeight:   height,
 	}
