@@ -2,20 +2,21 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"os"
-	"fmt"
 
 	"path/filepath"
+
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	icscmd "github.com/atomone-hub/ics-poc-1/cmd"
-	icscfg "github.com/atomone-hub/ics-poc-1/config"
 	"cosmossdk.io/client/v2/autocli"
 	"cosmossdk.io/log"
 	confixcmd "cosmossdk.io/tools/confix/cmd"
+	icscmd "github.com/atomone-hub/ics-poc-1/cmd"
+	icscfg "github.com/atomone-hub/ics-poc-1/config"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/config"
@@ -40,8 +41,8 @@ import (
 
 	cmtcfg "github.com/cometbft/cometbft/config"
 
-	appEncoding "github.com/atomone-hub/ics-poc-1/app/provider/encoding"
-	providerApp "github.com/atomone-hub/ics-poc-1/app/provider"
+	providerApp "github.com/atomone-hub/ics-poc-1/testapp/provider"
+	appEncoding "github.com/atomone-hub/ics-poc-1/testapp/provider/encoding"
 )
 
 // NewRootCmd creates a new root command for simd. It is called once in the
@@ -230,16 +231,16 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig appEncoding.EncodingConf
 		if err != nil {
 			return fmt.Errorf("failed to load ICS config from %s: %w", filepath.Join(homeDir, "config", "ics.toml"), err)
 		}
-		
+
 		// Create the provider handler with the runtime-loaded config
 		providerHandler := icscmd.NewProvider(*icsConfig)
-		
+
 		// Call it with all the parameters
 		return providerHandler(svrCtx, clientCtx, appCreator, inProcessConsensus, opts)
 	}
 	server.AddCommandsWithStartCmdOptions(rootCmd, providerApp.DefaultNodeHome, newApp, appExport, server.StartCmdOptions{
-		StartCommandHandler: customStartHandler ,
-	})	
+		StartCommandHandler: customStartHandler,
+	})
 
 	// add keybase, auxiliary RPC, query, genesis, and tx child commands
 	rootCmd.AddCommand(

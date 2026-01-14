@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/atomone-hub/ics-poc-1/app/provider/encoding"
+	"github.com/atomone-hub/ics-poc-1/testapp/provider/encoding"
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/gogoproto/proto"
 
@@ -21,7 +21,6 @@ import (
 	storetypes "cosmossdk.io/store/types"
 
 	"cosmossdk.io/x/tx/signing"
-"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/grpc/cmtservice"
@@ -80,6 +79,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/slashing"
 	slashingkeeper "github.com/cosmos/cosmos-sdk/x/slashing/keeper"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
+	"github.com/cosmos/cosmos-sdk/x/staking"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
@@ -89,7 +89,7 @@ import (
 )
 
 const (
-	AppName     = "ics-consumer"
+	AppName = "ics-provider"
 )
 
 // this line is used by starport scaffolding # stargate/wasm/app/enabledProposals
@@ -117,19 +117,17 @@ var (
 		distr.AppModuleBasic{},
 		staking.AppModuleBasic{},
 
-
-
 		params.AppModuleBasic{},
 	)
 
 	// module account permissions
 	maccPerms = map[string][]string{
-		authtypes.FeeCollectorName:        nil,
-		distrtypes.ModuleName:             nil,
-		minttypes.ModuleName:              {authtypes.Minter},
-		stakingtypes.BondedPoolName:       {authtypes.Burner, authtypes.Staking},
-		stakingtypes.NotBondedPoolName:    {authtypes.Burner, authtypes.Staking},
-		govtypes.ModuleName:               {authtypes.Burner},
+		authtypes.FeeCollectorName:     nil,
+		distrtypes.ModuleName:          nil,
+		minttypes.ModuleName:           {authtypes.Minter},
+		stakingtypes.BondedPoolName:    {authtypes.Burner, authtypes.Staking},
+		stakingtypes.NotBondedPoolName: {authtypes.Burner, authtypes.Staking},
+		govtypes.ModuleName:            {authtypes.Burner},
 	}
 )
 
@@ -177,8 +175,6 @@ type App struct { // nolint: golint
 	configurator module.Configurator
 }
 
-
-
 func init() {
 	userHomeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -224,7 +220,6 @@ func New(
 
 	std.RegisterLegacyAminoCodec(legacyAmino)
 	std.RegisterInterfaces(interfaceRegistry)
-	
 
 	bApp := baseapp.NewBaseApp(AppName, logger, db, txConfig.TxDecoder(), baseAppOptions...)
 	bApp.SetCommitMultiStoreTracer(traceStore)
@@ -234,7 +229,7 @@ func New(
 	keys := storetypes.NewKVStoreKeys(
 		authtypes.StoreKey, banktypes.StoreKey, stakingtypes.StoreKey,
 		minttypes.StoreKey, distrtypes.StoreKey, slashingtypes.StoreKey,
-		govtypes.StoreKey, paramstypes.StoreKey, 
+		govtypes.StoreKey, paramstypes.StoreKey,
 		consensusparamtypes.StoreKey,
 	)
 
@@ -284,7 +279,6 @@ func New(
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
 
-
 	moduleAccountAddresses := app.ModuleAccountAddrs()
 	app.BankKeeper = bankkeeper.NewBaseKeeper(
 		appCodec,
@@ -321,8 +315,6 @@ func New(
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
 
-
-
 	// get skipUpgradeHeights from the app options
 	skipUpgradeHeights := map[int64]bool{}
 	for _, h := range cast.ToIntSlice(appOpts.Get(server.FlagUnsafeSkipUpgrades)) {
@@ -338,7 +330,6 @@ func New(
 		),
 	)
 
-
 	govConfig := govtypes.DefaultConfig()
 	app.GovKeeper = govkeeper.NewKeeper(
 		appCodec,
@@ -353,7 +344,6 @@ func New(
 		govConfig,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
-
 
 	app.MintKeeper = mintkeeper.NewKeeper(
 		appCodec,
@@ -376,7 +366,6 @@ func New(
 	// Set legacy router for backwards compatibility with gov v1beta1
 	app.GovKeeper.SetLegacyRouter(govRouter)
 
-	
 	// NOTE: Any module instantiated in the module manager that is later modified
 	// must be passed by reference here.
 	app.MM = module.NewManager(
@@ -394,17 +383,17 @@ func New(
 		params.NewAppModule(app.ParamsKeeper),
 	)
 
-	// // NOTE: @Msalopek -> ModuleBasic override is happening because Tx commands don't work without it
-	// ModuleBasics = module.NewBasicManagerFromManager(
-	// 	app.MM,
-	// 	map[string]module.AppModuleBasic{
-	// 		genutiltypes.ModuleName: genutil.NewAppModuleBasic(genutiltypes.DefaultMessageValidator),
-	// 		govtypes.ModuleName: gov.NewAppModuleBasic(
-	// 			[]govclient.ProposalHandler{
-	// 				paramsclient.ProposalHandler,
-	// 			},
-	// 		),
-	// 	})
+	// NOTE: @Msalopek -> ModuleBasic override is happening because Tx commands don't work without it
+	ModuleBasics = module.NewBasicManagerFromManager(
+		app.MM,
+		map[string]module.AppModuleBasic{
+			genutiltypes.ModuleName: genutil.NewAppModuleBasic(genutiltypes.DefaultMessageValidator),
+			govtypes.ModuleName: gov.NewAppModuleBasic(
+				[]govclient.ProposalHandler{
+					paramsclient.ProposalHandler,
+				},
+			),
+		})
 	ModuleBasics.RegisterLegacyAminoCodec(app.legacyAmino)
 	ModuleBasics.RegisterInterfaces(app.interfaceRegistry)
 
@@ -494,7 +483,6 @@ func New(
 	// register the store decoders for simulation tests
 	app.sm.RegisterStoreDecoders()
 
-
 	autocliv1.RegisterQueryServer(app.GRPCQueryRouter(), runtimeservices.NewAutoCLIQueryService(app.MM.Modules))
 
 	reflectionSvc, err := runtimeservices.NewReflectionService()
@@ -563,7 +551,6 @@ func (app *App) BlockedModuleAccountAddrs(modAccAddrs map[string]bool) map[strin
 	return modAccAddrs
 }
 
-
 // Name returns the name of the App
 func (app *App) Name() string { return app.BaseApp.Name() }
 
@@ -611,7 +598,6 @@ func (app *App) InitChainer(ctx sdk.Context, req *abci.RequestInitChain) (*abci.
 func (app *App) LoadHeight(height int64) error {
 	return app.LoadVersion(height)
 }
-
 
 // LegacyAmino returns App's amino codec.
 //
@@ -668,8 +654,6 @@ func (app *App) SimulationManager() *module.SimulationManager {
 	return app.sm
 }
 
-
-
 // GetTestGovKeeper implements the ProviderApp interface.
 func (app *App) GetTestGovKeeper() *govkeeper.Keeper {
 	return app.GovKeeper
@@ -681,10 +665,6 @@ func (app *App) GetTestGovKeeper() *govkeeper.Keeper {
 func (app *App) GetBaseApp() *baseapp.BaseApp {
 	return app.BaseApp
 }
-
-
-
-
 
 // GetTxConfig implements the TestingApp interface.
 func (app *App) GetTxConfig() client.TxConfig {

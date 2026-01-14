@@ -36,8 +36,8 @@ import (
 
 	cmtcfg "github.com/cometbft/cometbft/config"
 
-	appEncoding "github.com/atomone-hub/ics-poc-1/app/provider/encoding"
-	providerApp "github.com/atomone-hub/ics-poc-1/app/provider"
+	providerApp "github.com/atomone-hub/ics-poc-1/testapp/provider"
+	appEncoding "github.com/atomone-hub/ics-poc-1/testapp/provider/encoding"
 )
 
 // NewRootCmd creates a new root command for simd. It is called once in the

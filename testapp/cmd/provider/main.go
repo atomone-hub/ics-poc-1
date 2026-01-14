@@ -6,9 +6,9 @@ import (
 
 	svrcmd "github.com/cosmos/cosmos-sdk/server/cmd"
 
-	appparams "github.com/atomone-hub/ics-poc-1/app/provider/params"
-	app "github.com/atomone-hub/ics-poc-1/app/provider"
-	"github.com/atomone-hub/ics-poc-1/app/cmd/provider/cmd"
+	"github.com/atomone-hub/ics-poc-1/testapp/cmd/provider/cmd"
+	app "github.com/atomone-hub/ics-poc-1/testapp/provider"
+	appparams "github.com/atomone-hub/ics-poc-1/testapp/provider/params"
 )
 
 func main() {

@@ -4,7 +4,6 @@ go 1.25.4
 
 replace (
 	cosmossdk.io/store => github.com/atomone-hub/cosmos-sdk/store v1.1.2-0.20260107105933-680c2b513b67
-	github.com/atomone-hub/ics-poc-1 => github.com/atomone-hub/ics-poc-1 v0.0.0-20260107142032-e2562f1b3a4c
 	github.com/cometbft/cometbft => github.com/atomone-hub/cometbft v0.0.0-20251216151559-a24cfa28b916
 	github.com/cosmos/cosmos-sdk => github.com/atomone-hub/cosmos-sdk v0.50.14-atomone.1.0.20260107105933-680c2b513b67
 	github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7

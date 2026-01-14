@@ -1,4 +1,4 @@
-module github.com/atomone-hub/ics-poc-1/app
+module github.com/atomone-hub/ics-poc-1/testapp
 
 go 1.25.4
 
