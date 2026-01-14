@@ -4,7 +4,7 @@ go 1.25.4
 
 replace (
 	cosmossdk.io/store => github.com/atomone-hub/cosmos-sdk/store v1.1.2-0.20260107105933-680c2b513b67
-	github.com/atomone-hub/ics-poc-1 => github.com/atomone-hub/ics-poc-1 v0.0.0-20260107142032-e2562f1b3a4c
+	github.com/atomone-hub/ics-poc-1 => ../
 	github.com/cometbft/cometbft => github.com/atomone-hub/cometbft v0.0.0-20251216151559-a24cfa28b916
 	github.com/cosmos/cosmos-sdk => github.com/atomone-hub/cosmos-sdk v0.50.14-atomone.1.0.20260107105933-680c2b513b67
 	github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
@@ -225,7 +225,6 @@ require (
 	github.com/oasisprotocol/curve25519-voi v0.0.0-20230904125328-1f23a7beb09a // indirect
 	github.com/oklog/run v1.1.0 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
-	github.com/opencontainers/image-spec v1.1.0-rc5 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/petermattis/goid v0.0.0-20240813172612-4fcff4a6cae7 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
