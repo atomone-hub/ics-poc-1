@@ -304,8 +304,10 @@ func (m *Multiplexer) FinalizeBlock(ctx context.Context, req *abci.RequestFinali
 	}
 
 	// Now that provider FinalizeBlock is done, we can query for active chains
-	if err := m.updateActiveChains(ctx); err != nil {
-		m.logger.Error("Failed to update active chains", "error", err)
+	if req.Height > 1 {
+		if err := m.updateActiveChains(ctx); err != nil {
+			m.logger.Error("Failed to update active chains", "error", err)
+		}
 	}
 
 	m.validateActiveChains()
