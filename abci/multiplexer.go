@@ -305,7 +305,9 @@ func (m *Multiplexer) Stop() error {
 	}
 
 	for _, handler := range m.chainHandlers {
-		errs = errors.Join(errs, handler.conn.Close())
+		if handler.conn != nil {
+			errs = errors.Join(errs, handler.conn.Close())
+		}
 	}
 
 	if err := m.stopTraceWriter(); err != nil {
