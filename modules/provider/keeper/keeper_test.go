@@ -43,6 +43,7 @@ func initFixture(t *testing.T) *fixture {
 		authority,
 		nil, // auth keeper
 		nil, // bank keeper
+		nil, // staking keeper
 	)
 
 	// Initialize params

@@ -7,7 +7,9 @@ import (
 	"cosmossdk.io/collections"
 	"cosmossdk.io/core/address"
 	corestore "cosmossdk.io/core/store"
+	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/codec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/atomone-hub/ics-poc-1/modules/provider/types"
 )
@@ -20,8 +22,9 @@ type Keeper struct {
 	// Typically, this should be the x/gov module account.
 	authority []byte
 
-	authKeeper types.AuthKeeper
-	bankKeeper types.BankKeeper
+	authKeeper    types.AuthKeeper
+	bankKeeper    types.BankKeeper
+	stakingKeeper types.StakingKeeper
 
 	Schema         collections.Schema
 	Params         collections.Item[types.Params]
@@ -35,6 +38,7 @@ func NewKeeper(
 	authority []byte,
 	authKeeper types.AuthKeeper,
 	bankKeeper types.BankKeeper,
+	stakingKeeper types.StakingKeeper,
 ) Keeper {
 	if _, err := addressCodec.BytesToString(authority); err != nil {
 		panic(fmt.Sprintf("invalid authority address %s: %s", authority, err))
@@ -43,12 +47,13 @@ func NewKeeper(
 	sb := collections.NewSchemaBuilder(storeService)
 
 	k := Keeper{
-		storeService: storeService,
-		cdc:          cdc,
-		addressCodec: addressCodec,
-		authority:    authority,
-		authKeeper:   authKeeper,
-		bankKeeper:   bankKeeper,
+		storeService:  storeService,
+		cdc:           cdc,
+		addressCodec:  addressCodec,
+		authority:     authority,
+		authKeeper:    authKeeper,
+		bankKeeper:    bankKeeper,
+		stakingKeeper: stakingKeeper,
 
 		Params:         collections.NewItem(sb, types.ParamsKey, "params", codec.CollValue[types.Params](cdc)),
 		ConsumerChains: collections.NewMap(sb, types.ConsumerChainsKey, "consumer_chains", collections.StringKey, codec.CollValue[types.ConsumerChain](cdc)),
