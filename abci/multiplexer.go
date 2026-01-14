@@ -11,15 +11,19 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"cosmossdk.io/log"
 	"github.com/atomone-hub/ics-poc-1/config"
+	abci "github.com/cometbft/cometbft/abci/types"
 	cmtcfg "github.com/cometbft/cometbft/config"
+	"github.com/cometbft/cometbft/crypto/encoding"
 	"github.com/cometbft/cometbft/node"
 	"github.com/cometbft/cometbft/p2p"
 	pvm "github.com/cometbft/cometbft/privval"
 	"github.com/cometbft/cometbft/proxy"
 	"github.com/cometbft/cometbft/rpc/client/local"
+	cmttypes "github.com/cometbft/cometbft/types"
 	db "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -36,7 +40,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	abci "github.com/cometbft/cometbft/abci/types"
+	providertypes "github.com/atomone-hub/ics-poc-1/modules/provider/types"
 )
 
 const (
@@ -60,8 +64,8 @@ type Multiplexer struct {
 	svrCfg serverconfig.Config
 	// clientContext is used to configure the different services managed by the multiplexer.
 	clientContext client.Context
-	// appCreator is a function type responsible for creating the provider chain.
-	appCreator servertypes.AppCreator
+	// providerCreator is a function type responsible for creating the provider chain.
+	providerCreator servertypes.AppCreator
 	// providerChain is the native provider chain.
 	providerChain servertypes.Application
 	// providerChainID is the chain ID of the provider chain.
@@ -70,6 +74,14 @@ type Multiplexer struct {
 	chainHandlers map[string]*ChainHandler
 	// rejectedConsumerChains tracks consumer chains that rejected the current proposal
 	rejectedConsumerChains map[string]bool
+	// initializedChains tracks which chains have had InitChain called
+	initializedChains map[string]bool
+	// activeChains tracks the list of active chains from the provider module
+	activeChains map[string]bool
+	// genesisValidators stores the initial validators from InitChain for use with dynamic consumer chains
+	genesisValidators []abci.ValidatorUpdate
+	// genesisConsensusParams stores the initial consensus params from InitChain for use with dynamic consumer chains
+	genesisConsensusParams *cmttypes.ConsensusParams
 	// cmNode is the comet node which has been created (of the provider chain).
 	cmNode *node.Node
 	// ctx is the context which is passed to the comet, grpc and api server starting functions.
@@ -90,7 +102,7 @@ func NewMultiplexer(
 	svrCtx *server.Context,
 	svrCfg serverconfig.Config,
 	clientCtx client.Context,
-	appCreator servertypes.AppCreator,
+	providerCreator servertypes.AppCreator,
 	chainConfig config.Config,
 ) (*Multiplexer, error) {
 	if len(chainConfig.Chains) == 0 {
@@ -101,10 +113,12 @@ func NewMultiplexer(
 		svrCtx:                 svrCtx,
 		svrCfg:                 svrCfg,
 		clientContext:          clientCtx,
-		appCreator:             appCreator,
+		providerCreator:        providerCreator,
 		logger:                 svrCtx.Logger.With("module", "multiplexer"),
 		chainHandlers:          make(map[string]*ChainHandler, len(chainConfig.Chains)),
 		rejectedConsumerChains: make(map[string]bool),
+		initializedChains:      make(map[string]bool),
+		activeChains:           make(map[string]bool),
 		chainConfig:            chainConfig,
 	}
 
@@ -163,9 +177,38 @@ func (m *Multiplexer) startNativeProvider() error {
 		return err
 	}
 
-	m.providerChain = m.appCreator(m.logger, db, m.traceWriter, m.svrCtx.Viper)
+	m.providerChain = m.providerCreator(m.logger, db, m.traceWriter, m.svrCtx.Viper)
 	m.providerChainID = getProviderChainID(m.svrCtx.Viper)
 
+	if err := m.loadGenesisValues(); err != nil {
+		return fmt.Errorf("failed to load genesis values: %w", err)
+	}
+
+	return nil
+}
+
+// loadGenesisValues loads validators and consensus params from the genesis document.
+func (m *Multiplexer) loadGenesisValues() error {
+	genDocProvider := GetGenDocProvider(m.svrCtx.Config)
+	genDoc, err := genDocProvider()
+	if err != nil {
+		return fmt.Errorf("failed to load genesis doc: %w", err)
+	}
+
+	// Convert genesis validators to ABCI validator updates
+	m.genesisValidators = make([]abci.ValidatorUpdate, 0, len(genDoc.Validators))
+	for _, val := range genDoc.Validators {
+		pubKey, err := encoding.PubKeyToProto(val.PubKey)
+		if err != nil {
+			return fmt.Errorf("failed to convert validator pubkey: %w", err)
+		}
+		m.genesisValidators = append(m.genesisValidators, abci.ValidatorUpdate{
+			PubKey: pubKey,
+			Power:  val.Power,
+		})
+	}
+
+	m.genesisConsensusParams = genDoc.ConsensusParams
 	return nil
 }
 
@@ -193,9 +236,8 @@ func (m *Multiplexer) initChainHandlers() error {
 	return nil
 }
 
-// initRemoteGrpcConn initializes a gRPC connection to the remote application client and configures transport credentials.
+// initRemoteGrpcConn initializes a gRPC connection to the remote application client
 func (m *Multiplexer) initRemoteGrpcConn(chainInfo config.ChainInfo) (*grpc.ClientConn, error) {
-	// remove tcp:// prefix if present
 	abciServerAddr := strings.TrimPrefix(chainInfo.GRPCAddress, "tcp://")
 
 	conn, err := grpc.NewClient(
@@ -431,6 +473,133 @@ func (m *Multiplexer) startGRPCServer() (*grpc.Server, client.Context, error) {
 	return grpcSrv, m.clientContext, nil
 }
 
+// getActiveChainIDsFromProvider gets active chain IDs from the provider module
+func (m *Multiplexer) getActiveChainIDsFromProvider(ctx context.Context) ([]string, error) {
+	queryReq := &providertypes.QueryActiveConsumerChainsRequest{}
+	queryReqBytes, err := queryReq.Marshal()
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal query request: %w", err)
+	}
+
+	abciReq := &abci.RequestQuery{
+		Path:   "/ics.provider.v1.Query/ActiveConsumerChains",
+		Data:   queryReqBytes,
+		Height: 0,
+		Prove:  false,
+	}
+
+	abciResp, err := m.providerChain.Query(ctx, abciReq)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query active chains: %w", err)
+	}
+
+	if abciResp.Code != 0 {
+		return nil, fmt.Errorf("query returned error code %d: %s", abciResp.Code, abciResp.Log)
+	}
+
+	var queryResp providertypes.QueryActiveConsumerChainsResponse
+	if err := queryResp.Unmarshal(abciResp.Value); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal query response: %w", err)
+	}
+
+	var activeChainIDs []string
+	for _, chain := range queryResp.ConsumerChains {
+		activeChainIDs = append(activeChainIDs, chain.ChainId)
+	}
+
+	return activeChainIDs, nil
+}
+
+// validateActiveChains checks that all active chains have corresponding handlers
+func (m *Multiplexer) validateActiveChains() {
+	for chainID := range m.activeChains {
+		if _, exists := m.chainHandlers[chainID]; !exists {
+			m.logger.Error(
+				"Active consumer chain missing from validator configuration",
+				"chain_id", chainID,
+				"error", "chain not found in chainHandlers",
+			)
+		}
+	}
+}
+
+// initChainIfNeeded initializes a chain if it hasn't been initialized yet.
+// Checks chain state via Info to detect already-initialized chains after restart.
+func (m *Multiplexer) initChainIfNeeded(chainID string, height int64, blockTime time.Time) error {
+	if m.initializedChains[chainID] {
+		return nil
+	}
+
+	handler, exists := m.chainHandlers[chainID]
+	if !exists {
+		return fmt.Errorf("chain handler not found for chain_id: %s", chainID)
+	}
+
+	// Check if chain has state (already initialized)
+	infoResp, err := handler.app.Info(&abci.RequestInfo{})
+	if err == nil && (infoResp.LastBlockHeight > 0 || len(infoResp.LastBlockAppHash) > 0) {
+		m.logger.Info("Chain already initialized", "chain_id", chainID, "height", infoResp.LastBlockHeight)
+		m.initializedChains[chainID] = true
+		return nil
+	}
+
+	m.logger.Info("Initializing new consumer chain", "chain_id", chainID, "height", height)
+
+	// Use stored genesis values, falling back to defaults if not available
+	consensusParams := m.genesisConsensusParams
+	if consensusParams == nil {
+		consensusParams = cmttypes.DefaultConsensusParams()
+	}
+
+	protoConsensusParams := consensusParams.ToProto()
+	initReq := &abci.RequestInitChain{
+		Time:            blockTime,
+		ChainId:         chainID,
+		ConsensusParams: &protoConsensusParams,
+		Validators:      m.genesisValidators,
+		AppStateBytes:   []byte{},
+		InitialHeight:   height,
+	}
+
+	_, err = handler.app.InitChain(initReq)
+	if err != nil {
+		return fmt.Errorf("failed to initialize chain %s: %w", chainID, err)
+	}
+
+	m.initializedChains[chainID] = true
+	m.logger.Info("Successfully initialized consumer chain", "chain_id", chainID)
+
+	return nil
+}
+
+// updateActiveChains updates the list of active chains from the provider module
+func (m *Multiplexer) updateActiveChains(ctx context.Context) error {
+	activeChainIDs, err := m.getActiveChainIDsFromProvider(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get active chains: %w", err)
+	}
+
+	newActiveChains := make(map[string]bool)
+	for _, chainID := range activeChainIDs {
+		newActiveChains[chainID] = true
+	}
+
+	for chainID := range newActiveChains {
+		if !m.activeChains[chainID] {
+			m.logger.Info("New active consumer chain detected", "chain_id", chainID)
+		}
+	}
+
+	for chainID := range m.activeChains {
+		if !newActiveChains[chainID] {
+			m.logger.Info("Consumer chain no longer active", "chain_id", chainID)
+		}
+	}
+
+	m.activeChains = newActiveChains
+	return nil
+}
+
 func emitServerInfoMetrics() {
 	var ls []metrics.Label
 
@@ -448,7 +617,6 @@ func emitServerInfoMetrics() {
 func getCtx(svrCtx *server.Context, block bool) (*errgroup.Group, context.Context) {
 	ctx, cancelFn := context.WithCancel(context.Background())
 	g, ctx := errgroup.WithContext(ctx)
-	// listen for quit signals so the calling parent process can gracefully exit
 	server.ListenForQuitSignals(g, block, cancelFn, svrCtx.Logger)
 	return g, ctx
 }

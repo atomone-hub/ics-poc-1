@@ -26,6 +26,11 @@ service Query {
   rpc ConsumerChain(QueryConsumerChainRequest) returns (QueryConsumerChainResponse) {
     option (google.api.http).get = "/ics/provider/v1/consumer_chains/{chain_id}";
   }
+
+  // ActiveConsumerChains queries only active consumer chains.
+  rpc ActiveConsumerChains(QueryActiveConsumerChainsRequest) returns (QueryActiveConsumerChainsResponse) {
+    option (google.api.http).get = "/ics/provider/v1/active_consumer_chains";
+  }
 }
 
 // QueryParamsRequest is request type for the Query/Params RPC method.
@@ -65,4 +70,19 @@ message QueryConsumerChainRequest {
 message QueryConsumerChainResponse {
   // consumer_chain is the requested consumer chain.
   ConsumerChain consumer_chain = 1 [(gogoproto.nullable) = false];
+}
+
+// QueryActiveConsumerChainsRequest is request type for the Query/ActiveConsumerChains RPC method.
+message QueryActiveConsumerChainsRequest {
+  // pagination defines an optional pagination for the request.
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+}
+
+// QueryActiveConsumerChainsResponse is response type for the Query/ActiveConsumerChains RPC method.
+message QueryActiveConsumerChainsResponse {
+  // consumer_chains is the list of active consumer chains.
+  repeated ConsumerChain consumer_chains = 1 [(gogoproto.nullable) = false];
+
+  // pagination defines the pagination in the response.
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }
