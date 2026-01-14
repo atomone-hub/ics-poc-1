@@ -34,7 +34,7 @@ provider-start: build
 	# Decrease voting period to 5min
 	jq '.app_state.gov.params.voting_period = "300s"' $(provider_home)/config/genesis.json > /tmp/gen
 	mv /tmp/gen $(provider_home)/config/genesis.json
-	printf "[[chains]]\nchain_id = \"consumer-localnet\"\ngrpc_address = \"tcp://localhost:36659\"\nhome = \"$(consumer_home)\"\n" > $(provider_home)/config/ics.toml
+	printf "[[chains]]\nchain_id = \"consumer-localnet\"\ngrpc_address = \"tcp://localhost:36659\"\n" > $(provider_home)/config/ics.toml
 	$(providerd) start --rpc.grpc_laddr tcp://127.0.0.1:36658 --log_level "debug"
 
 consumer_home=~/.consumer-localnet
