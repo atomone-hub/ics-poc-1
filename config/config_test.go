@@ -29,9 +29,6 @@ func TestLoadConfig_WithValidFile(t *testing.T) {
 	if cfg.Chains[0].GRPCAddress != "grpc://localhost:9090" {
 		t.Errorf("expected address 'grpc://localhost:9090', got '%s'", cfg.Chains[0].GRPCAddress)
 	}
-	if cfg.Chains[0].Home != "/tmp/chain1" {
-		t.Errorf("expected home '/tmp/chain1', got '%s'", cfg.Chains[0].Home)
-	}
 
 	// Verify second chain
 	if cfg.Chains[1].ChainID != "chain-2" {
@@ -39,9 +36,6 @@ func TestLoadConfig_WithValidFile(t *testing.T) {
 	}
 	if cfg.Chains[1].GRPCAddress != "grpc://localhost:9091" {
 		t.Errorf("expected address 'grpc://localhost:9091', got '%s'", cfg.Chains[1].GRPCAddress)
-	}
-	if cfg.Chains[1].Home != "/tmp/chain2" {
-		t.Errorf("expected home '/tmp/chain2', got '%s'", cfg.Chains[1].Home)
 	}
 }
 
@@ -88,7 +82,6 @@ func TestValidate_Success(t *testing.T) {
 			{
 				ChainID:     "test-chain",
 				GRPCAddress: "grpc://localhost:9090",
-				Home:        "/tmp/test",
 			},
 		},
 	}
@@ -105,7 +98,6 @@ func TestValidate_MissingChainID(t *testing.T) {
 			{
 				ChainID:     "",
 				GRPCAddress: "grpc://localhost:9090",
-				Home:        "/tmp/test",
 			},
 		},
 	}
@@ -122,7 +114,6 @@ func TestValidate_MissingAddress(t *testing.T) {
 			{
 				ChainID:     "test-chain",
 				GRPCAddress: "",
-				Home:        "/tmp/test",
 			},
 		},
 	}
@@ -139,12 +130,10 @@ func TestValidate_MultipleChains(t *testing.T) {
 			{
 				ChainID:     "chain-1",
 				GRPCAddress: "grpc://localhost:9090",
-				Home:        "/tmp/chain1",
 			},
 			{
 				ChainID:     "chain-2",
 				GRPCAddress: "grpc://localhost:9091",
-				Home:        "/tmp/chain2",
 			},
 		},
 	}

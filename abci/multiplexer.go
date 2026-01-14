@@ -231,7 +231,7 @@ func (m *Multiplexer) initChainHandlers() error {
 		}
 
 		m.chainHandlers[chainInfo.ChainID] = handler
-		m.logger.Info("Registered chain", "chain_id", chainInfo.ChainID, "home", chainInfo.Home)
+		m.logger.Info("Registered chain", "chain_id", chainInfo.ChainID)
 	}
 
 	return nil
