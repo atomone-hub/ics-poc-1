@@ -34,7 +34,32 @@ provider-start: build
 	# Decrease voting period to 5min
 	jq '.app_state.gov.params.voting_period = "300s"' $(provider_home)/config/genesis.json > /tmp/gen
 	mv /tmp/gen $(provider_home)/config/genesis.json
-	$(providerd) start
+	echo "[[chains]]\nchain_id = \"consumer-localnet\"\ngrpc_address = \"grpc://localhost:9090\"\nhome = \"$(consumer_home)\"\n" > $(provider_home)/config/ics.toml
+	$(providerd) start --rpc.grpc_laddr 36658
+
+consumer_home=~/.consumer-localnet
+consumerd=./build/consumer --home $(consumer_home)
+
+consumer-start: build
+	rm -rf $(consumer_home)
+	$(consumerd) init localnet --default-denom uatone --chain-id consumer-localnet
+	$(consumerd) config set client chain-id consumer-localnet
+	$(consumerd) config set client keyring-backend test
+	$(consumerd) keys add val
+	$(consumerd) genesis add-genesis-account val 1000000000000uatone --chain-id consumer-localnet
+	$(consumerd) keys add user
+	$(consumerd) genesis add-genesis-account user 1000000000uatone --chain-id consumer-localnet
+	$(consumerd) genesis gentx val 1000000000uatone
+	$(consumerd) genesis collect-gentxs
+	
+	# Set validator gas prices
+	sed -i.bak 's#^minimum-gas-prices = .*#minimum-gas-prices = "0.01uatone,0.01uphoton"#g' $(consumer_home)/config/app.toml
+	# enable REST API
+	$(consumerd) config set app api.enable true
+	# Decrease voting period to 5min
+	jq '.app_state.gov.params.voting_period = "300s"' $(consumer_home)/config/genesis.json > /tmp/gen
+	mv /tmp/gen $(consumer_home)/config/genesis.json
+	$(consumerd) start --with-comet=false --rpc.grpc_laddr 36659
 
 # Run unit tests
 test:

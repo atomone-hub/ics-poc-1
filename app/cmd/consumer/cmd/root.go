@@ -4,15 +4,11 @@ import (
 	"errors"
 	"io"
 	"os"
-	"fmt"
 
-	"path/filepath"
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	icscmd "github.com/atomone-hub/ics-poc-1/cmd"
-	icscfg "github.com/atomone-hub/ics-poc-1/config"
 	"cosmossdk.io/client/v2/autocli"
 	"cosmossdk.io/log"
 	confixcmd "cosmossdk.io/tools/confix/cmd"
@@ -184,7 +180,7 @@ func initAppConfig() (string, interface{}) {
 	//   own app.toml to override, or use this default value.
 	//
 	// In simapp, we set the min gas prices to 0.
-	srvCfg.MinGasPrices = "0uatone"
+	srvCfg.MinGasPrices = "0stake"
 	// srvCfg.BaseConfig.IAVLDisableFastNode = true // disable fastnode by default
 
 	customAppConfig := CustomAppConfig{
@@ -218,28 +214,7 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig appEncoding.EncodingConf
 		server.QueryBlockResultsCmd(),
 	)
 
-	// icsConfig, err := icscfg.LoadConfig(filepath.Join(providerApp.DefaultNodeHome, "config", "ics.toml"))
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// Create a wrapper that loads config at runtime based on actual --home flag
-	customStartHandler := func(svrCtx *server.Context, clientCtx client.Context, appCreator servertypes.AppCreator, inProcessConsensus bool, opts server.StartCmdOptions) error {
-		// Load the config using the actual home directory from the runtime context
-		homeDir := svrCtx.Config.RootDir // This is the actual --home value
-		icsConfig, err := icscfg.LoadConfig(filepath.Join(homeDir, "config", "ics.toml"))
-		if err != nil {
-			return fmt.Errorf("failed to load ICS config from %s: %w", filepath.Join(homeDir, "config", "ics.toml"), err)
-		}
-		
-		// Create the provider handler with the runtime-loaded config
-		providerHandler := icscmd.NewProvider(*icsConfig)
-		
-		// Call it with all the parameters
-		return providerHandler(svrCtx, clientCtx, appCreator, inProcessConsensus, opts)
-	}
-	server.AddCommandsWithStartCmdOptions(rootCmd, providerApp.DefaultNodeHome, newApp, appExport, server.StartCmdOptions{
-		StartCommandHandler: customStartHandler ,
-	})	
+	server.AddCommands(rootCmd, providerApp.DefaultNodeHome, newApp, appExport, addModuleInitFlags)
 
 	// add keybase, auxiliary RPC, query, genesis, and tx child commands
 	rootCmd.AddCommand(

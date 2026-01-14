@@ -41,6 +41,8 @@ func DefaultConfig() *Config {
 
 func LoadConfig(configFile string) (*Config, error) {
 	config := DefaultConfig()
+	
+	fmt.Println(configFile)
 	if configFile == "" {
 		return config, nil
 	}
@@ -71,6 +73,10 @@ func LoadConfig(configFile string) (*Config, error) {
 	if err := viper.Unmarshal(config); err != nil {
 		return nil, fmt.Errorf("failed to parse config: %w", err)
 	}
+	fmt.Println("this: ",config.Chains[0])
+	config.Chains[0].ChainID = "consumer-localnet"
+	config.Chains[0].GRPCAddress = "grpc://localhost:9090"
+	config.Chains[0].Home = "~/.consumer-localnet"
 
 	if err := config.Validate(); err != nil {
 		return nil, fmt.Errorf("invalid config: %w", err)
