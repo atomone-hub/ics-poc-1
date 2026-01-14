@@ -51,7 +51,6 @@ func (m *Multiplexer) CheckTx(ctx context.Context, req *abci.RequestCheckTx) (*a
 		return &abci.ResponseCheckTx{Code: 1, Log: fmt.Sprintf("unknown chain: %s", chainID)}, nil
 	}
 
-	// Check if chain is initialized
 	if !m.initializedChains[chainID] {
 		return &abci.ResponseCheckTx{Code: 1, Log: fmt.Sprintf("chain not initialized: %s", chainID)}, nil
 	}
@@ -107,7 +106,6 @@ func (m *Multiplexer) InitChain(ctx context.Context, req *abci.RequestInitChain)
 
 		chainHashes[res.chainID] = res.response.AppHash
 
-		// Mark chain as initialized
 		m.initializedChains[res.chainID] = true
 
 		// Only use ConsensusParams and Validators from provider chain
@@ -152,7 +150,6 @@ func (m *Multiplexer) ProcessProposal(ctx context.Context, req *abci.RequestProc
 			if _, exists := m.chainHandlers[chainID]; !exists {
 				return &abci.ResponseProcessProposal{Status: abci.ResponseProcessProposal_REJECT}, nil
 			}
-			// Check if chain is initialized
 			if !m.initializedChains[chainID] {
 				m.logger.Warn("Transaction for uninitialized chain in proposal", "chain_id", chainID)
 				return &abci.ResponseProcessProposal{Status: abci.ResponseProcessProposal_REJECT}, nil
