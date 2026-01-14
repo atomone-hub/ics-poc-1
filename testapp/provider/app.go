@@ -86,6 +86,10 @@ import (
 	abci "github.com/cometbft/cometbft/abci/types"
 	tmjson "github.com/cometbft/cometbft/libs/json"
 	tmos "github.com/cometbft/cometbft/libs/os"
+
+	providerkeeper "github.com/atomone-hub/ics-poc-1/modules/provider/keeper"
+	provider "github.com/atomone-hub/ics-poc-1/modules/provider/module"
+	providertypes "github.com/atomone-hub/ics-poc-1/modules/provider/types"
 )
 
 const (
@@ -118,6 +122,7 @@ var (
 		staking.AppModuleBasic{},
 
 		params.AppModuleBasic{},
+		provider.AppModule{},
 	)
 
 	// module account permissions
@@ -161,11 +166,13 @@ type App struct { // nolint: golint
 	// NOTE the distribution keeper should either be removed
 	// from consumer chain or set to use an independent
 	// different fee-pool from the consumer chain ConsumerKeeper
-	DistrKeeper distrkeeper.Keeper
-
+	DistrKeeper           distrkeeper.Keeper
 	GovKeeper             *govkeeper.Keeper // Gov Keeper must be a pointer in the app, so we can SetRouter on it correctly
 	ParamsKeeper          paramskeeper.Keeper
 	ConsensusParamsKeeper consensusparamkeeper.Keeper
+
+	// Provider Module
+	ProviderKeeper providerkeeper.Keeper
 
 	// the module manager
 	MM *module.Manager
@@ -230,7 +237,7 @@ func New(
 		authtypes.StoreKey, banktypes.StoreKey, stakingtypes.StoreKey,
 		minttypes.StoreKey, distrtypes.StoreKey, slashingtypes.StoreKey,
 		govtypes.StoreKey, paramstypes.StoreKey,
-		consensusparamtypes.StoreKey,
+		consensusparamtypes.StoreKey, providertypes.ModuleName,
 	)
 
 	// register streaming services
@@ -336,8 +343,6 @@ func New(
 		runtime.NewKVStoreService(keys[govtypes.StoreKey]),
 		app.AccountKeeper,
 		app.BankKeeper,
-		// use the ProviderKeeper as StakingKeeper for gov
-		// because governance should be based on the consensus-active validators
 		app.StakingKeeper,
 		app.DistrKeeper,
 		app.MsgServiceRouter(),
@@ -348,8 +353,6 @@ func New(
 	app.MintKeeper = mintkeeper.NewKeeper(
 		appCodec,
 		runtime.NewKVStoreService(keys[minttypes.StoreKey]),
-		// use the ProviderKeeper as StakingKeeper for mint
-		// because minting should be based on the consensus-active validators
 		app.StakingKeeper,
 		app.AccountKeeper,
 		app.BankKeeper,
@@ -357,8 +360,15 @@ func New(
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
 
-	// gov router must be set after the provider keeper is created
-	// otherwise the provider keeper will not be able to handle proposals (will be nil)
+	app.ProviderKeeper = providerkeeper.NewKeeper(
+		runtime.NewKVStoreService(keys[providertypes.ModuleName]),
+		appCodec,
+		app.AccountKeeper.AddressCodec(),
+		authtypes.NewModuleAddress(govtypes.ModuleName),
+		app.AccountKeeper,
+		app.BankKeeper,
+	)
+
 	govRouter := govv1beta1.NewRouter()
 	govRouter.
 		AddRoute(govtypes.RouterKey, govv1beta1.ProposalHandler).
@@ -379,7 +389,7 @@ func New(
 		slashing.NewAppModule(appCodec, app.SlashingKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper, app.GetSubspace(slashingtypes.ModuleName), app.interfaceRegistry),
 		distr.NewAppModule(appCodec, app.DistrKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper, app.GetSubspace(distrtypes.ModuleName)),
 		staking.NewAppModule(appCodec, app.StakingKeeper, app.AccountKeeper, app.BankKeeper, app.GetSubspace(stakingtypes.ModuleName)),
-
+		provider.NewAppModule(appCodec, app.ProviderKeeper, app.AccountKeeper, app.BankKeeper),
 		params.NewAppModule(app.ParamsKeeper),
 	)
 
@@ -431,6 +441,7 @@ func New(
 		genutiltypes.ModuleName,
 		paramstypes.ModuleName,
 		vestingtypes.ModuleName,
+		providertypes.ModuleName,
 	)
 
 	// NOTE: provider module needs to come after the staking module, since
@@ -446,6 +457,7 @@ func New(
 		genutiltypes.ModuleName,
 		paramstypes.ModuleName,
 		vestingtypes.ModuleName,
+		providertypes.ModuleName,
 	)
 
 	// NOTE: The genutils module must occur after staking so that pools are
@@ -461,7 +473,7 @@ func New(
 		slashingtypes.ModuleName,
 		govtypes.ModuleName,
 		minttypes.ModuleName,
-
+		providertypes.ModuleName,
 		genutiltypes.ModuleName,
 		paramstypes.ModuleName,
 		vestingtypes.ModuleName,
