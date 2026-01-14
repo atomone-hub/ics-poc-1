@@ -140,10 +140,6 @@ func (m *Multiplexer) Start() error {
 		return fmt.Errorf("failed to start native app: %w", err)
 	}
 
-	if err := m.enableGRPCAndAPIServers(m.providerChain); err != nil {
-		return fmt.Errorf("failed to enable grpc and api servers: %w", err)
-	}
-
 	// Initialize all chain handlers
 	if err := m.initChainHandlers(); err != nil {
 		return fmt.Errorf("failed to initialize chain handlers: %w", err)
@@ -157,6 +153,10 @@ func (m *Multiplexer) Start() error {
 		if err := m.startCmtNode(); err != nil {
 			return err
 		}
+	}
+
+	if err := m.enableGRPCAndAPIServers(m.providerChain); err != nil {
+		return fmt.Errorf("failed to enable grpc and api servers: %w", err)
 	}
 
 	// wait for signal capture and gracefully return
