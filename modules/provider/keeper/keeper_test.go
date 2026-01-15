@@ -12,9 +12,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	moduletestutil "github.com/cosmos/cosmos-sdk/types/module/testutil"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"go.uber.org/mock/gomock"
 
 	"github.com/atomone-hub/ics-poc-1/modules/provider/keeper"
 	module "github.com/atomone-hub/ics-poc-1/modules/provider/module"
+	icstestutil "github.com/atomone-hub/ics-poc-1/modules/provider/testutil"
 	"github.com/atomone-hub/ics-poc-1/modules/provider/types"
 )
 
@@ -36,14 +38,19 @@ func initFixture(t *testing.T) *fixture {
 
 	authority := authtypes.NewModuleAddress(types.GovModuleName)
 
+	ctrl := gomock.NewController(t)
+	bankKeeper := icstestutil.NewMockBankKeeper(ctrl)
+	stakingKeeper := icstestutil.NewMockStakingKeeper(ctrl)
+	accountKeeper := icstestutil.NewMockAuthKeeper(ctrl)
+
 	k := keeper.NewKeeper(
 		storeService,
 		encCfg.Codec,
 		addressCodec,
 		authority,
-		nil, // auth keeper
-		nil, // bank keeper
-		nil, // staking keeper
+		accountKeeper, // auth keeper
+		bankKeeper,    // bank keeper
+		stakingKeeper, // staking keeper
 	)
 
 	// Initialize params
