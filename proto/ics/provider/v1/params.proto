@@ -22,4 +22,7 @@ message Params {
   // downtime_slashing_window is the number of blocks in which a validator
   // can be offline before being slashed for downtime on consumer chains.
   int64 downtime_slashing_window = 2;
+
+  // fee_denom is the denom for the coin used to collect fees
+  string fee_denom = 3;
 }
