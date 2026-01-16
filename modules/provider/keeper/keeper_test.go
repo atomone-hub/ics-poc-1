@@ -78,6 +78,18 @@ func initFixture(t *testing.T) *fixture {
 }
 
 func TestCollectFeesFromConsumers(t *testing.T) {
+	// Create consumer chain
+	DefaultConsumer := types.NewConsumerChain(
+		"consumer-1",
+		"Consumer 1",
+		"v1.0.0",
+		types.ConsumerStatus_CONSUMER_STATUS_ACTIVE,
+		100,
+		0,
+		"",
+	)
+	defaultModuleAddr := sdk.AccAddress("consumer-1-module-account")
+
 	testCases := []struct {
 		name              string
 		feesPerBlock      math.Int
@@ -89,19 +101,9 @@ func TestCollectFeesFromConsumers(t *testing.T) {
 			name:         "collect fees from single active consumer with sufficient balance",
 			feesPerBlock: math.NewInt(1000),
 			setupConsumers: func(t *testing.T, f *fixture) {
-				// Create consumer chain
-				consumer := types.NewConsumerChain(
-					"consumer-1",
-					"Consumer 1",
-					"v1.0.0",
-					types.ConsumerStatus_CONSUMER_STATUS_ACTIVE,
-					100,
-					0,
-					"",
-				)
-
+				consumer := DefaultConsumer
+				moduleAddr := defaultModuleAddr
 				// Mock auth keeper for module account creation
-				moduleAddr := sdk.AccAddress("consumer-1-module-account")
 				f.authKeeper.EXPECT().GetModuleAddress("consumer_consumer-1").Return(moduleAddr).AnyTimes()
 				f.authKeeper.EXPECT().NewAccountWithAddress(gomock.Any(), moduleAddr).Return(authtypes.NewBaseAccountWithAddress(moduleAddr)).AnyTimes()
 				f.authKeeper.EXPECT().SetAccount(gomock.Any(), gomock.Any()).AnyTimes()
@@ -134,18 +136,9 @@ func TestCollectFeesFromConsumers(t *testing.T) {
 			name:         "skip consumer with insufficient balance",
 			feesPerBlock: math.NewInt(1000),
 			setupConsumers: func(t *testing.T, f *fixture) {
-				// Create consumer with insufficient balance
-				consumer := types.NewConsumerChain(
-					"consumer-1",
-					"Consumer 1",
-					"v1.0.0",
-					types.ConsumerStatus_CONSUMER_STATUS_ACTIVE,
-					100,
-					0,
-					"",
-				)
+				consumer := DefaultConsumer
+				moduleAddr := defaultModuleAddr
 
-				moduleAddr := sdk.AccAddress("consumer-1-module-account")
 				f.authKeeper.EXPECT().GetModuleAddress("consumer_consumer-1").Return(moduleAddr).AnyTimes()
 				f.authKeeper.EXPECT().NewAccountWithAddress(gomock.Any(), moduleAddr).Return(authtypes.NewBaseAccountWithAddress(moduleAddr)).AnyTimes()
 				f.authKeeper.EXPECT().SetAccount(gomock.Any(), gomock.Any()).AnyTimes()
@@ -169,18 +162,10 @@ func TestCollectFeesFromConsumers(t *testing.T) {
 			name:         "skip inactive consumers",
 			feesPerBlock: math.NewInt(1000),
 			setupConsumers: func(t *testing.T, f *fixture) {
+				consumer := DefaultConsumer
+				moduleAddr := defaultModuleAddr
 				// Create inactive consumer (PENDING status)
-				consumer := types.NewConsumerChain(
-					"consumer-1",
-					"Consumer 1",
-					"v1.0.0",
-					types.ConsumerStatus_CONSUMER_STATUS_PENDING,
-					100,
-					0,
-					"",
-				)
-
-				moduleAddr := sdk.AccAddress("consumer-1-module-account")
+				consumer.Status = types.ConsumerStatus_CONSUMER_STATUS_PENDING
 				f.authKeeper.EXPECT().GetModuleAddress("consumer_consumer-1").Return(moduleAddr).AnyTimes()
 				f.authKeeper.EXPECT().NewAccountWithAddress(gomock.Any(), moduleAddr).Return(authtypes.NewBaseAccountWithAddress(moduleAddr)).AnyTimes()
 				f.authKeeper.EXPECT().SetAccount(gomock.Any(), gomock.Any()).AnyTimes()
@@ -197,18 +182,8 @@ func TestCollectFeesFromConsumers(t *testing.T) {
 			name:         "collect from multiple active consumers",
 			feesPerBlock: math.NewInt(500),
 			setupConsumers: func(t *testing.T, f *fixture) {
-				// Create first consumer
-				consumer1 := types.NewConsumerChain(
-					"consumer-1",
-					"Consumer 1",
-					"v1.0.0",
-					types.ConsumerStatus_CONSUMER_STATUS_ACTIVE,
-					100,
-					0,
-					"",
-				)
-
-				moduleAddr1 := sdk.AccAddress("consumer-1-module-account")
+				consumer1 := DefaultConsumer
+				moduleAddr1 := defaultModuleAddr
 				f.authKeeper.EXPECT().GetModuleAddress("consumer_consumer-1").Return(moduleAddr1).AnyTimes()
 				f.authKeeper.EXPECT().NewAccountWithAddress(gomock.Any(), moduleAddr1).Return(authtypes.NewBaseAccountWithAddress(moduleAddr1)).AnyTimes()
 				f.authKeeper.EXPECT().SetAccount(gomock.Any(), gomock.Any()).AnyTimes()
@@ -275,17 +250,8 @@ func TestCollectFeesFromConsumers(t *testing.T) {
 			name:         "bank transfer fails",
 			feesPerBlock: math.NewInt(1000),
 			setupConsumers: func(t *testing.T, f *fixture) {
-				consumer := types.NewConsumerChain(
-					"consumer-1",
-					"Consumer 1",
-					"v1.0.0",
-					types.ConsumerStatus_CONSUMER_STATUS_ACTIVE,
-					100,
-					0,
-					"",
-				)
-
-				moduleAddr := sdk.AccAddress("consumer-1-module-account")
+				consumer := DefaultConsumer
+				moduleAddr := defaultModuleAddr
 				f.authKeeper.EXPECT().GetModuleAddress("consumer_consumer-1").Return(moduleAddr).AnyTimes()
 				f.authKeeper.EXPECT().NewAccountWithAddress(gomock.Any(), moduleAddr).Return(authtypes.NewBaseAccountWithAddress(moduleAddr)).AnyTimes()
 				f.authKeeper.EXPECT().SetAccount(gomock.Any(), gomock.Any()).AnyTimes()
@@ -314,15 +280,8 @@ func TestCollectFeesFromConsumers(t *testing.T) {
 			name:         "invalid module account address",
 			feesPerBlock: math.NewInt(1000),
 			setupConsumers: func(t *testing.T, f *fixture) {
-				consumer := types.NewConsumerChain(
-					"consumer-1",
-					"Consumer 1",
-					"v1.0.0",
-					types.ConsumerStatus_CONSUMER_STATUS_ACTIVE,
-					100,
-					0,
-					"invalid-address",
-				)
+				consumer := DefaultConsumer
+				consumer.ModuleAccountAddress = "invalid-address"
 				require.NoError(t, f.keeper.ConsumerChains.Set(f.ctx, consumer.ChainId, consumer))
 			},
 			expectedTotalFees: math.ZeroInt(),
@@ -338,15 +297,14 @@ func TestCollectFeesFromConsumers(t *testing.T) {
 			tc.setupConsumers(t, f)
 
 			// Execute collection
-			totalFeesCollected := math.ZeroInt()
-			err := f.keeper.CollectFeesFromConsumers(f.ctx, tc.feesPerBlock, &totalFeesCollected)
+			totalFeesCollected, err := f.keeper.CollectFeesFromConsumers(f.ctx, tc.feesPerBlock)
 
 			if tc.expectError {
 				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-				require.Equal(t, tc.expectedTotalFees.String(), totalFeesCollected.String(), "total fees collected mismatch")
+				return
 			}
+			require.NoError(t, err)
+			require.Equal(t, tc.expectedTotalFees.String(), totalFeesCollected.String(), "total fees collected mismatch")
 		})
 	}
 }
@@ -439,13 +397,13 @@ func TestDistributeFeesToValidators(t *testing.T) {
 			// Execute distribution
 			err := f.keeper.DistributeFeesToValidators(f.ctx, tc.totalFees)
 
-			if tc.expectError {
-				require.Error(t, err)
-				if tc.errorContains != "" {
-					require.Contains(t, err.Error(), tc.errorContains)
-				}
-			} else {
+			if !tc.expectError {
 				require.NoError(t, err)
+				return
+			}
+			require.Error(t, err)
+			if tc.errorContains != "" {
+				require.Contains(t, err.Error(), tc.errorContains)
 			}
 		})
 	}

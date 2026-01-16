@@ -117,13 +117,14 @@ func (k Keeper) CreateConsumerModuleAccount(ctx context.Context, chainID string)
 }
 
 // CollectFeesFromConsumers iterates through all consumer chains and collects fees from active ones.
-func (k Keeper) CollectFeesFromConsumers(ctx context.Context, feesPerBlock math.Int, totalFeesCollected *math.Int) error {
+func (k Keeper) CollectFeesFromConsumers(ctx context.Context, feesPerBlock math.Int) (math.Int, error) {
+	totalFeesCollected := math.ZeroInt()
 	params, err := k.Params.Get(ctx)
 	if err != nil {
-		return err
+		return totalFeesCollected, err
 	}
 	feeDenom := params.FeeDenom
-	return k.IterateConsumerChains(ctx, func(consumer types.ConsumerChain) (bool, error) {
+	err = k.IterateConsumerChains(ctx, func(consumer types.ConsumerChain) (bool, error) {
 		// Only process active chains
 		if !consumer.IsActive() {
 			return false, nil
@@ -152,10 +153,11 @@ func (k Keeper) CollectFeesFromConsumers(ctx context.Context, feesPerBlock math.
 			return true, fmt.Errorf("failed to collect fees from chain %s: %w", consumer.ChainId, err)
 		}
 
-		*totalFeesCollected = totalFeesCollected.Add(feesPerBlock)
+		totalFeesCollected = totalFeesCollected.Add(feesPerBlock)
 
 		return false, nil
 	})
+	return totalFeesCollected, err
 }
 
 // DistributeFeesToValidators distributes collected fees to the validator set.

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/telemetry"
 
 	"github.com/atomone-hub/ics-poc-1/modules/provider/keeper"
@@ -29,9 +28,7 @@ func BeginBlocker(ctx context.Context, k keeper.Keeper) error {
 	}
 
 	// Collect fees from all active consumer chains
-	var totalFeesCollected math.Int = math.ZeroInt()
-
-	err = k.CollectFeesFromConsumers(ctx, params.FeesPerBlock, &totalFeesCollected)
+	totalFeesCollected, err := k.CollectFeesFromConsumers(ctx, params.FeesPerBlock)
 
 	if err != nil {
 		return err
