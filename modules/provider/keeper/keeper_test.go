@@ -319,18 +319,20 @@ func TestDistributeFeesToValidators(t *testing.T) {
 			name:      "distribute to single validator",
 			totalFees: math.NewInt(1000),
 			setupMocks: func(t *testing.T, f *fixture) {
-				// Create validator using gomock
+				// Create validator
 				valAddr := sdk.AccAddress("validator1-address-12345")
 				valAddrBech32, _ := sdk.Bech32ifyAddressBytes(sdk.GetConfig().GetBech32AccountAddrPrefix(), valAddr)
 
-				mockVal := icstestutil.NewMockValidatorI(gomock.NewController(t))
-				mockVal.EXPECT().GetOperator().Return(valAddrBech32).AnyTimes()
-				mockVal.EXPECT().GetConsensusPower(gomock.Any()).Return(int64(100)).AnyTimes()
+				val := stakingtypes.Validator{
+					OperatorAddress: valAddrBech32,
+					Tokens:          math.NewInt(100000000), // 100 tokens * 1000000 (DefaultPowerReduction)
+					Status:          stakingtypes.Bonded,
+				}
 
 				params, err := f.keeper.Params.Get(f.ctx)
 				require.NoError(t, err)
 
-				f.stakingKeeper.EXPECT().GetBondedValidatorsByPower(gomock.Any()).Return([]stakingtypes.ValidatorI{mockVal}, nil)
+				f.stakingKeeper.EXPECT().GetBondedValidatorsByPower(gomock.Any()).Return([]stakingtypes.Validator{val}, nil)
 				f.bankKeeper.EXPECT().SendCoinsFromModuleToAccount(
 					gomock.Any(),
 					"fee_collector",
@@ -346,24 +348,30 @@ func TestDistributeFeesToValidators(t *testing.T) {
 				// Create validators
 				valAddr1 := sdk.AccAddress("validator1-address-12345")
 				valAddrBech32_1, _ := sdk.Bech32ifyAddressBytes(sdk.GetConfig().GetBech32AccountAddrPrefix(), valAddr1)
-				mockVal1 := icstestutil.NewMockValidatorI(f.mockController)
-				mockVal1.EXPECT().GetOperator().Return(valAddrBech32_1).AnyTimes()
-				mockVal1.EXPECT().GetConsensusPower(gomock.Any()).Return(int64(60)).AnyTimes()
+				val1 := stakingtypes.Validator{
+					OperatorAddress: valAddrBech32_1,
+					Tokens:          math.NewInt(60000000), // 60 tokens * 1000000 (DefaultPowerReduction)
+					Status:          stakingtypes.Bonded,
+				}
 
 				valAddr2 := sdk.AccAddress("validator2-address-12345")
 				valAddrBech32_2, _ := sdk.Bech32ifyAddressBytes(sdk.GetConfig().GetBech32AccountAddrPrefix(), valAddr2)
-				mockVal2 := icstestutil.NewMockValidatorI(f.mockController)
-				mockVal2.EXPECT().GetOperator().Return(valAddrBech32_2).AnyTimes()
-				mockVal2.EXPECT().GetConsensusPower(gomock.Any()).Return(int64(30)).AnyTimes()
+				val2 := stakingtypes.Validator{
+					OperatorAddress: valAddrBech32_2,
+					Tokens:          math.NewInt(30000000), // 30 tokens * 1000000 (DefaultPowerReduction)
+					Status:          stakingtypes.Bonded,
+				}
 
 				valAddr3 := sdk.AccAddress("validator3-address-12345")
 				valAddrBech32_3, _ := sdk.Bech32ifyAddressBytes(sdk.GetConfig().GetBech32AccountAddrPrefix(), valAddr3)
-				mockVal3 := icstestutil.NewMockValidatorI(f.mockController)
-				mockVal3.EXPECT().GetOperator().Return(valAddrBech32_3).AnyTimes()
-				mockVal3.EXPECT().GetConsensusPower(gomock.Any()).Return(int64(10)).AnyTimes()
+				val3 := stakingtypes.Validator{
+					OperatorAddress: valAddrBech32_3,
+					Tokens:          math.NewInt(10000000), // 10 tokens * 1000000 (DefaultPowerReduction)
+					Status:          stakingtypes.Bonded,
+				}
 
 				f.stakingKeeper.EXPECT().GetBondedValidatorsByPower(gomock.Any()).Return(
-					[]stakingtypes.ValidatorI{mockVal1, mockVal2, mockVal3}, nil)
+					[]stakingtypes.Validator{val1, val2, val3}, nil)
 
 				params, err := f.keeper.Params.Get(f.ctx)
 				require.NoError(t, err)
@@ -377,7 +385,7 @@ func TestDistributeFeesToValidators(t *testing.T) {
 			name:      "no validators",
 			totalFees: math.NewInt(1000),
 			setupMocks: func(t *testing.T, f *fixture) {
-				f.stakingKeeper.EXPECT().GetBondedValidatorsByPower(gomock.Any()).Return([]stakingtypes.ValidatorI{}, nil)
+				f.stakingKeeper.EXPECT().GetBondedValidatorsByPower(gomock.Any()).Return([]stakingtypes.Validator{}, nil)
 			},
 		},
 	}
