@@ -216,10 +216,10 @@ func (m *MockStakingKeeper) EXPECT() *MockStakingKeeperMockRecorder {
 }
 
 // GetBondedValidatorsByPower mocks base method.
-func (m *MockStakingKeeper) GetBondedValidatorsByPower(ctx context.Context) ([]types0.ValidatorI, error) {
+func (m *MockStakingKeeper) GetBondedValidatorsByPower(ctx context.Context) ([]types0.Validator, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBondedValidatorsByPower", ctx)
-	ret0, _ := ret[0].([]types0.ValidatorI)
+	ret0, _ := ret[0].([]types0.Validator)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
