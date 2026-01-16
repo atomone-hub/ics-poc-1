@@ -1,0 +1,20 @@
+name: Build
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+jobs:
+  testapps:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "stable"
+          check-latest: true
+      - name: Build
+        run: |
+          make build
