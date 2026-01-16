@@ -2,6 +2,7 @@ package keeper_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"cosmossdk.io/core/address"
@@ -95,7 +96,7 @@ func TestCollectFeesFromConsumers(t *testing.T) {
 		feesPerBlock      math.Int
 		setupConsumers    func(t *testing.T, f *fixture)
 		expectedTotalFees math.Int
-		expectError       bool
+		error             error
 	}{
 		{
 			name:         "collect fees from single active consumer with sufficient balance",
@@ -130,7 +131,6 @@ func TestCollectFeesFromConsumers(t *testing.T) {
 				).Return(nil)
 			},
 			expectedTotalFees: math.NewInt(1000),
-			expectError:       false,
 		},
 		{
 			name:         "skip consumer with insufficient balance",
@@ -156,7 +156,6 @@ func TestCollectFeesFromConsumers(t *testing.T) {
 				f.bankKeeper.EXPECT().GetBalance(gomock.Any(), addr, params.FeeDenom).Return(sdk.NewCoin(params.FeeDenom, math.NewInt(100)))
 			},
 			expectedTotalFees: math.ZeroInt(),
-			expectError:       false,
 		},
 		{
 			name:         "skip inactive consumers",
@@ -176,7 +175,6 @@ func TestCollectFeesFromConsumers(t *testing.T) {
 				require.NoError(t, f.keeper.ConsumerChains.Set(f.ctx, consumer.ChainId, consumer))
 			},
 			expectedTotalFees: math.ZeroInt(),
-			expectError:       false,
 		},
 		{
 			name:         "collect from multiple active consumers",
@@ -235,7 +233,6 @@ func TestCollectFeesFromConsumers(t *testing.T) {
 				).Return(nil)
 			},
 			expectedTotalFees: math.NewInt(1000),
-			expectError:       false,
 		},
 		{
 			name:         "no consumers registered",
@@ -244,7 +241,6 @@ func TestCollectFeesFromConsumers(t *testing.T) {
 				// No consumers to setup
 			},
 			expectedTotalFees: math.ZeroInt(),
-			expectError:       false,
 		},
 		{
 			name:         "bank transfer fails",
@@ -274,7 +270,7 @@ func TestCollectFeesFromConsumers(t *testing.T) {
 				).Return(sdkerrors.ErrInsufficientFunds)
 			},
 			expectedTotalFees: math.ZeroInt(),
-			expectError:       true,
+			error:             fmt.Errorf("failed to collect fees from chain consumer-1: insufficient funds"),
 		},
 		{
 			name:         "invalid module account address",
@@ -285,7 +281,7 @@ func TestCollectFeesFromConsumers(t *testing.T) {
 				require.NoError(t, f.keeper.ConsumerChains.Set(f.ctx, consumer.ChainId, consumer))
 			},
 			expectedTotalFees: math.ZeroInt(),
-			expectError:       true,
+			error:             fmt.Errorf("failed to parse module account address for chain consumer-1: decoding bech32 failed: invalid separator index -1"),
 		},
 	}
 
@@ -299,8 +295,9 @@ func TestCollectFeesFromConsumers(t *testing.T) {
 			// Execute collection
 			totalFeesCollected, err := f.keeper.CollectFeesFromConsumers(f.ctx, tc.feesPerBlock)
 
-			if tc.expectError {
+			if tc.error != nil {
 				require.Error(t, err)
+				require.Equal(t, tc.error.Error(), err.Error())
 				return
 			}
 			require.NoError(t, err)
@@ -313,11 +310,10 @@ func TestDistributeFeesToValidators(t *testing.T) {
 	f := initFixture(t)
 
 	testCases := []struct {
-		name          string
-		totalFees     math.Int
-		setupMocks    func(t *testing.T, f *fixture)
-		expectError   bool
-		errorContains string
+		name       string
+		totalFees  math.Int
+		setupMocks func(t *testing.T, f *fixture)
+		error      error
 	}{
 		{
 			name:      "distribute to single validator",
@@ -342,7 +338,6 @@ func TestDistributeFeesToValidators(t *testing.T) {
 					sdk.NewCoins(sdk.NewCoin(params.FeeDenom, math.NewInt(1000))),
 				).Return(nil)
 			},
-			expectError: false,
 		},
 		{
 			name:      "distribute to multiple validators proportionally",
@@ -377,7 +372,6 @@ func TestDistributeFeesToValidators(t *testing.T) {
 				f.bankKeeper.EXPECT().SendCoinsFromModuleToAccount(gomock.Any(), "fee_collector", valAddr2, sdk.NewCoins(sdk.NewCoin(params.FeeDenom, math.NewInt(300)))).Return(nil)
 				f.bankKeeper.EXPECT().SendCoinsFromModuleToAccount(gomock.Any(), "fee_collector", valAddr3, sdk.NewCoins(sdk.NewCoin(params.FeeDenom, math.NewInt(100)))).Return(nil)
 			},
-			expectError: false,
 		},
 		{
 			name:      "no validators",
@@ -385,10 +379,8 @@ func TestDistributeFeesToValidators(t *testing.T) {
 			setupMocks: func(t *testing.T, f *fixture) {
 				f.stakingKeeper.EXPECT().GetBondedValidatorsByPower(gomock.Any()).Return([]stakingtypes.ValidatorI{}, nil)
 			},
-			expectError: false,
 		},
 	}
-
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Setup test-specific mocks
@@ -397,14 +389,12 @@ func TestDistributeFeesToValidators(t *testing.T) {
 			// Execute distribution
 			err := f.keeper.DistributeFeesToValidators(f.ctx, tc.totalFees)
 
-			if !tc.expectError {
-				require.NoError(t, err)
+			if tc.error != nil {
+				require.Error(t, err)
+				require.Equal(t, tc.error.Error(), err.Error())
 				return
 			}
-			require.Error(t, err)
-			if tc.errorContains != "" {
-				require.Contains(t, err.Error(), tc.errorContains)
-			}
+			require.NoError(t, err)
 		})
 	}
 }
