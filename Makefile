@@ -1,6 +1,7 @@
 BUILDDIR ?= $(CURDIR)/build
 
 
+GO_REQUIRED_VERSION = $(shell go list -f {{.GoVersion}} -m)
 BUILD_TARGETS := build install
 build: BUILD_ARGS=-o $(BUILDDIR)/
 
@@ -60,6 +61,14 @@ consumer-start: build
 	jq '.app_state.gov.params.voting_period = "300s"' $(consumer_home)/config/genesis.json > /tmp/gen
 	mv /tmp/gen $(consumer_home)/config/genesis.json
 	$(consumerd) start --with-comet=false --transport=grpc --rpc.grpc_laddr tcp://127.0.0.1:36659 --grpc.enable=false --log_level "debug"
+
+docker-build:
+	@docker build -t ics-e2e -f ./testapp/e2e/docker/e2e.Dockerfile --build-arg GO_VERSION=$(GO_REQUIRED_VERSION) .
+
+PACKAGES_E2E=$(shell cd testapp/e2e && go list ./... | grep 'e2e')
+test-e2e: 
+	@echo "--> Running tests"
+	@cd ./testapp/e2e && go test  $(PACKAGES_E2E)
 
 # Run unit tests
 test:
