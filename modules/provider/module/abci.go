@@ -29,7 +29,6 @@ func BeginBlocker(ctx context.Context, k keeper.Keeper) error {
 
 	// Collect fees from all active consumer chains
 	totalFeesCollected, err := k.CollectFeesFromConsumers(ctx, params.FeesPerBlock)
-
 	if err != nil {
 		return err
 	}

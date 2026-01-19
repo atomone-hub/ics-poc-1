@@ -70,9 +70,14 @@ func (c ConsumerChain) IsRemoved() bool {
 	return c.Status == ConsumerStatus_CONSUMER_STATUS_REMOVED
 }
 
+// IsOverdue returns true if the consumer chain is overdue (failed to pay fees).
+func (c ConsumerChain) IsOverdue() bool {
+	return c.Status == ConsumerStatus_CONSUMER_STATUS_OVERDUE
+}
+
 // CanUpgrade returns true if the consumer chain can be upgraded.
 func (c ConsumerChain) CanUpgrade() bool {
-	return c.IsActive() || c.IsPending()
+	return c.IsActive() || c.IsPending() || c.IsOverdue()
 }
 
 // CanSunset returns true if the consumer chain can be sunset.

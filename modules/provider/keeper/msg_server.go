@@ -199,9 +199,8 @@ func (k msgServer) UpgradeConsumer(ctx context.Context, req *types.MsgUpgradeCon
 		return nil, errorsmod.Wrapf(types.ErrConsumerNotFound, "consumer %s not found", req.ChainId)
 	}
 
-	// Check if consumer is active or pending (can't upgrade sunset/removed chains)
-	if consumer.Status != types.ConsumerStatus_CONSUMER_STATUS_ACTIVE &&
-		consumer.Status != types.ConsumerStatus_CONSUMER_STATUS_PENDING {
+	// Check if consumer can be upgraded (can't upgrade sunset/removed chains)
+	if !consumer.CanUpgrade() {
 		return nil, types.ErrConsumerNotActive
 	}
 

@@ -48,4 +48,7 @@ enum ConsumerStatus {
 
   // CONSUMER_STATUS_REMOVED defines a consumer chain that has been removed.
   CONSUMER_STATUS_REMOVED = 4;
+
+  // CONSUMER_STATUS_OVERDUE defines a consumer state in which fees were not paid due to insufficient funds.
+  CONSUMER_STATUS_OVERDUE = 5;
 }

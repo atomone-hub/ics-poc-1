@@ -117,16 +117,11 @@ func (k Keeper) CreateConsumerModuleAccount(ctx context.Context, chainID string)
 }
 
 // CollectFeesFromConsumers iterates through all consumer chains and collects fees from active ones.
-func (k Keeper) CollectFeesFromConsumers(ctx context.Context, feesPerBlock math.Int) (math.Int, error) {
-	totalFeesCollected := math.ZeroInt()
-	params, err := k.Params.Get(ctx)
-	if err != nil {
-		return totalFeesCollected, err
-	}
-	feeDenom := params.FeeDenom
-	err = k.IterateConsumerChains(ctx, func(consumer types.ConsumerChain) (bool, error) {
-		// Only process active chains
-		if !consumer.IsActive() {
+func (k Keeper) CollectFeesFromConsumers(ctx context.Context, feesPerBlock sdk.Coin) (sdk.Coin, error) {
+	totalFeesCollected := sdk.NewCoin(feesPerBlock.Denom, math.ZeroInt())
+	err := k.IterateConsumerChains(ctx, func(consumer types.ConsumerChain) (bool, error) {
+		// Only process active and overdue chains (overdue chains get another chance to pay)
+		if !consumer.IsActive() && !consumer.IsOverdue() {
 			return false, nil
 		}
 
@@ -137,31 +132,32 @@ func (k Keeper) CollectFeesFromConsumers(ctx context.Context, feesPerBlock math.
 		}
 
 		// Check if account has sufficient balance
-		balance := k.bankKeeper.GetBalance(ctx, consumerAddr, feeDenom)
-		if balance.Amount.LT(feesPerBlock) {
-			// Skip this chain if it doesn't have enough funds
-			// TODO: consider updating chain status to inactive or sunset
-			return false, nil
+		balance := k.bankKeeper.GetBalance(ctx, consumerAddr, feesPerBlock.Denom)
+		if balance.IsLT(feesPerBlock) {
+			// Set chain overdue status if it doesn't have enough funds
+			consumer.Status = types.ConsumerStatus_CONSUMER_STATUS_OVERDUE
+		} else {
+			// Deduct fees from consumer module account
+			feeCoins := sdk.NewCoins(feesPerBlock)
+			consumerModuleName := types.GetConsumerModuleAccountName(consumer.ChainId)
+
+			// Send fees to a temporary collection account (fee_collector)
+			if err := k.bankKeeper.SendCoinsFromModuleToModule(ctx, consumerModuleName, "fee_collector", feeCoins); err != nil {
+				return true, fmt.Errorf("failed to collect fees from chain %s: %w", consumer.ChainId, err)
+			}
+
+			totalFeesCollected = totalFeesCollected.Add(feesPerBlock)
+			// Chain successfully paid, set status back to active
+			consumer.Status = types.ConsumerStatus_CONSUMER_STATUS_ACTIVE
 		}
 
-		// Deduct fees from consumer module account
-		feeCoins := sdk.NewCoins(sdk.NewCoin(feeDenom, feesPerBlock))
-		consumerModuleName := types.GetConsumerModuleAccountName(consumer.ChainId)
-
-		// Send fees to a temporary collection account (fee_collector)
-		if err := k.bankKeeper.SendCoinsFromModuleToModule(ctx, consumerModuleName, "fee_collector", feeCoins); err != nil {
-			return true, fmt.Errorf("failed to collect fees from chain %s: %w", consumer.ChainId, err)
-		}
-
-		totalFeesCollected = totalFeesCollected.Add(feesPerBlock)
-
-		return false, nil
+		return false, k.ConsumerChains.Set(ctx, consumer.ChainId, consumer)
 	})
 	return totalFeesCollected, err
 }
 
 // DistributeFeesToValidators distributes collected fees to the validator set.
-func (k Keeper) DistributeFeesToValidators(ctx context.Context, totalFees math.Int) error {
+func (k Keeper) DistributeFeesToValidators(ctx context.Context, totalFees sdk.Coin) error {
 	// Get the bonded validators
 	validators, err := k.stakingKeeper.GetBondedValidatorsByPower(ctx)
 	if err != nil {
@@ -183,30 +179,23 @@ func (k Keeper) DistributeFeesToValidators(ctx context.Context, totalFees math.I
 		return fmt.Errorf("total voting power is zero")
 	}
 
-	params, err := k.Params.Get(ctx)
-	if err != nil {
-		return err
-	}
-
 	// Distribute fees proportionally to each validator based on voting power
 	for _, val := range validators {
-		valPower := math.NewInt(val.GetConsensusPower(sdk.DefaultPowerReduction))
-
-		// Calculate validator's share: (validatorPower / totalPower) * totalFees
-		valShare := totalFees.Mul(valPower).Quo(totalPower)
-
-		if valShare.IsZero() {
-			continue
-		}
-
 		// Get validator operator address
 		valAddr, err := k.addressCodec.StringToBytes(val.GetOperator())
 		if err != nil {
 			return fmt.Errorf("failed to parse validator address: %w", err)
 		}
 
+		// Calculate validator's share: (validatorPower / totalPower) * totalFees
+		valPower := math.NewInt(val.GetConsensusPower(sdk.DefaultPowerReduction))
+		valShare := totalFees.Amount.Mul(valPower).Quo(totalPower)
+		if valShare.IsZero() {
+			continue
+		}
+
 		// Send coins from fee_collector to validator account
-		coins := sdk.NewCoins(sdk.NewCoin(params.FeeDenom, valShare))
+		coins := sdk.NewCoins(sdk.NewCoin(totalFees.Denom, valShare))
 		if err := k.bankKeeper.SendCoinsFromModuleToAccount(ctx, "fee_collector", valAddr, coins); err != nil {
 			return fmt.Errorf("failed to send fees to validator %s: %w", val.GetOperator(), err)
 		}

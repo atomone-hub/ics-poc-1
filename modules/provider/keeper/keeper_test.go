@@ -25,6 +25,8 @@ import (
 	"github.com/atomone-hub/ics-poc-1/modules/provider/types"
 )
 
+const denom = "photon"
+
 type fixture struct {
 	ctx            context.Context
 	keeper         keeper.Keeper
@@ -90,17 +92,16 @@ func TestCollectFeesFromConsumers(t *testing.T) {
 		"",
 	)
 	defaultModuleAddr := sdk.AccAddress("consumer-1-module-account")
-
 	testCases := []struct {
 		name              string
-		feesPerBlock      math.Int
+		feesPerBlock      sdk.Coin
 		setupConsumers    func(t *testing.T, f *fixture)
 		expectedTotalFees math.Int
 		error             error
 	}{
 		{
 			name:         "collect fees from single active consumer with sufficient balance",
-			feesPerBlock: math.NewInt(1000),
+			feesPerBlock: sdk.NewCoin(denom, math.NewInt(1000)),
 			setupConsumers: func(t *testing.T, f *fixture) {
 				consumer := DefaultConsumer
 				moduleAddr := defaultModuleAddr
@@ -122,19 +123,19 @@ func TestCollectFeesFromConsumers(t *testing.T) {
 
 				// Mock bank keeper
 				addr, _ := f.addressCodec.StringToBytes(consumerAddr)
-				f.bankKeeper.EXPECT().GetBalance(gomock.Any(), addr, params.FeeDenom).Return(sdk.NewCoin(params.FeeDenom, math.NewInt(10000)))
+				f.bankKeeper.EXPECT().GetBalance(gomock.Any(), addr, params.FeesPerBlock.Denom).Return(sdk.NewCoin(params.FeesPerBlock.Denom, math.NewInt(10000)))
 				f.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
 					gomock.Any(),
 					"consumer_consumer-1",
 					"fee_collector",
-					sdk.NewCoins(sdk.NewCoin(params.FeeDenom, math.NewInt(1000))),
+					sdk.NewCoins(sdk.NewCoin(params.FeesPerBlock.Denom, math.NewInt(1000))),
 				).Return(nil)
 			},
 			expectedTotalFees: math.NewInt(1000),
 		},
 		{
 			name:         "skip consumer with insufficient balance",
-			feesPerBlock: math.NewInt(1000),
+			feesPerBlock: sdk.NewCoin(denom, math.NewInt(1000)),
 			setupConsumers: func(t *testing.T, f *fixture) {
 				consumer := DefaultConsumer
 				moduleAddr := defaultModuleAddr
@@ -153,13 +154,13 @@ func TestCollectFeesFromConsumers(t *testing.T) {
 
 				addr, _ := f.addressCodec.StringToBytes(consumerAddr)
 				// Insufficient balance - less than feesPerBlock
-				f.bankKeeper.EXPECT().GetBalance(gomock.Any(), addr, params.FeeDenom).Return(sdk.NewCoin(params.FeeDenom, math.NewInt(100)))
+				f.bankKeeper.EXPECT().GetBalance(gomock.Any(), addr, params.FeesPerBlock.Denom).Return(sdk.NewCoin(params.FeesPerBlock.Denom, math.NewInt(100)))
 			},
 			expectedTotalFees: math.ZeroInt(),
 		},
 		{
 			name:         "skip inactive consumers",
-			feesPerBlock: math.NewInt(1000),
+			feesPerBlock: sdk.NewCoin(denom, math.NewInt(1000)),
 			setupConsumers: func(t *testing.T, f *fixture) {
 				consumer := DefaultConsumer
 				moduleAddr := defaultModuleAddr
@@ -178,7 +179,7 @@ func TestCollectFeesFromConsumers(t *testing.T) {
 		},
 		{
 			name:         "collect from multiple active consumers",
-			feesPerBlock: math.NewInt(500),
+			feesPerBlock: sdk.NewCoin(denom, math.NewInt(500)),
 			setupConsumers: func(t *testing.T, f *fixture) {
 				consumer1 := DefaultConsumer
 				moduleAddr1 := defaultModuleAddr
@@ -195,12 +196,12 @@ func TestCollectFeesFromConsumers(t *testing.T) {
 				require.NoError(t, err)
 
 				addr1, _ := f.addressCodec.StringToBytes(consumerAddr1)
-				f.bankKeeper.EXPECT().GetBalance(gomock.Any(), addr1, params.FeeDenom).Return(sdk.NewCoin(params.FeeDenom, math.NewInt(5000)))
+				f.bankKeeper.EXPECT().GetBalance(gomock.Any(), addr1, params.FeesPerBlock.Denom).Return(sdk.NewCoin(params.FeesPerBlock.Denom, math.NewInt(5000)))
 				f.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
 					gomock.Any(),
 					"consumer_consumer-1",
 					"fee_collector",
-					sdk.NewCoins(sdk.NewCoin(params.FeeDenom, math.NewInt(500))),
+					sdk.NewCoins(sdk.NewCoin(params.FeesPerBlock.Denom, math.NewInt(500))),
 				).Return(nil)
 
 				// Create second consumer
@@ -224,19 +225,19 @@ func TestCollectFeesFromConsumers(t *testing.T) {
 				require.NoError(t, f.keeper.ConsumerChains.Set(f.ctx, consumer2.ChainId, consumer2))
 
 				addr2, _ := f.addressCodec.StringToBytes(consumerAddr2)
-				f.bankKeeper.EXPECT().GetBalance(gomock.Any(), addr2, params.FeeDenom).Return(sdk.NewCoin(params.FeeDenom, math.NewInt(3000)))
+				f.bankKeeper.EXPECT().GetBalance(gomock.Any(), addr2, params.FeesPerBlock.Denom).Return(sdk.NewCoin(params.FeesPerBlock.Denom, math.NewInt(3000)))
 				f.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
 					gomock.Any(),
 					"consumer_consumer-2",
 					"fee_collector",
-					sdk.NewCoins(sdk.NewCoin(params.FeeDenom, math.NewInt(500))),
+					sdk.NewCoins(sdk.NewCoin(params.FeesPerBlock.Denom, math.NewInt(500))),
 				).Return(nil)
 			},
 			expectedTotalFees: math.NewInt(1000),
 		},
 		{
 			name:         "no consumers registered",
-			feesPerBlock: math.NewInt(1000),
+			feesPerBlock: sdk.NewCoin(denom, math.NewInt(1000)),
 			setupConsumers: func(t *testing.T, f *fixture) {
 				// No consumers to setup
 			},
@@ -244,7 +245,7 @@ func TestCollectFeesFromConsumers(t *testing.T) {
 		},
 		{
 			name:         "bank transfer fails",
-			feesPerBlock: math.NewInt(1000),
+			feesPerBlock: sdk.NewCoin(denom, math.NewInt(1000)),
 			setupConsumers: func(t *testing.T, f *fixture) {
 				consumer := DefaultConsumer
 				moduleAddr := defaultModuleAddr
@@ -261,7 +262,7 @@ func TestCollectFeesFromConsumers(t *testing.T) {
 				require.NoError(t, err)
 
 				addr, _ := f.addressCodec.StringToBytes(consumerAddr)
-				f.bankKeeper.EXPECT().GetBalance(gomock.Any(), addr, params.FeeDenom).Return(sdk.NewCoin(params.FeeDenom, math.NewInt(10000)))
+				f.bankKeeper.EXPECT().GetBalance(gomock.Any(), addr, params.FeesPerBlock.Denom).Return(sdk.NewCoin(params.FeesPerBlock.Denom, math.NewInt(10000)))
 				f.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
 					gomock.Any(),
 					"consumer_consumer-1",
@@ -274,7 +275,7 @@ func TestCollectFeesFromConsumers(t *testing.T) {
 		},
 		{
 			name:         "invalid module account address",
-			feesPerBlock: math.NewInt(1000),
+			feesPerBlock: sdk.NewCoin(denom, math.NewInt(1000)),
 			setupConsumers: func(t *testing.T, f *fixture) {
 				consumer := DefaultConsumer
 				consumer.ModuleAccountAddress = "invalid-address"
@@ -311,13 +312,13 @@ func TestDistributeFeesToValidators(t *testing.T) {
 
 	testCases := []struct {
 		name       string
-		totalFees  math.Int
+		totalFees  sdk.Coin
 		setupMocks func(t *testing.T, f *fixture)
 		error      error
 	}{
 		{
 			name:      "distribute to single validator",
-			totalFees: math.NewInt(1000),
+			totalFees: sdk.NewCoin(denom, math.NewInt(1000)),
 			setupMocks: func(t *testing.T, f *fixture) {
 				// Create validator
 				valAddr := sdk.AccAddress("validator1-address-12345")
@@ -337,13 +338,13 @@ func TestDistributeFeesToValidators(t *testing.T) {
 					gomock.Any(),
 					"fee_collector",
 					valAddr,
-					sdk.NewCoins(sdk.NewCoin(params.FeeDenom, math.NewInt(1000))),
+					sdk.NewCoins(sdk.NewCoin(params.FeesPerBlock.Denom, math.NewInt(1000))),
 				).Return(nil)
 			},
 		},
 		{
 			name:      "distribute to multiple validators proportionally",
-			totalFees: math.NewInt(1000),
+			totalFees: sdk.NewCoin(denom, math.NewInt(1000)),
 			setupMocks: func(t *testing.T, f *fixture) {
 				// Create validators
 				valAddr1 := sdk.AccAddress("validator1-address-12345")
@@ -376,14 +377,14 @@ func TestDistributeFeesToValidators(t *testing.T) {
 				params, err := f.keeper.Params.Get(f.ctx)
 				require.NoError(t, err)
 
-				f.bankKeeper.EXPECT().SendCoinsFromModuleToAccount(gomock.Any(), "fee_collector", valAddr1, sdk.NewCoins(sdk.NewCoin(params.FeeDenom, math.NewInt(600)))).Return(nil)
-				f.bankKeeper.EXPECT().SendCoinsFromModuleToAccount(gomock.Any(), "fee_collector", valAddr2, sdk.NewCoins(sdk.NewCoin(params.FeeDenom, math.NewInt(300)))).Return(nil)
-				f.bankKeeper.EXPECT().SendCoinsFromModuleToAccount(gomock.Any(), "fee_collector", valAddr3, sdk.NewCoins(sdk.NewCoin(params.FeeDenom, math.NewInt(100)))).Return(nil)
+				f.bankKeeper.EXPECT().SendCoinsFromModuleToAccount(gomock.Any(), "fee_collector", valAddr1, sdk.NewCoins(sdk.NewCoin(params.FeesPerBlock.Denom, math.NewInt(600)))).Return(nil)
+				f.bankKeeper.EXPECT().SendCoinsFromModuleToAccount(gomock.Any(), "fee_collector", valAddr2, sdk.NewCoins(sdk.NewCoin(params.FeesPerBlock.Denom, math.NewInt(300)))).Return(nil)
+				f.bankKeeper.EXPECT().SendCoinsFromModuleToAccount(gomock.Any(), "fee_collector", valAddr3, sdk.NewCoins(sdk.NewCoin(params.FeesPerBlock.Denom, math.NewInt(100)))).Return(nil)
 			},
 		},
 		{
 			name:      "no validators",
-			totalFees: math.NewInt(1000),
+			totalFees: sdk.NewCoin(denom, math.NewInt(1000)),
 			setupMocks: func(t *testing.T, f *fixture) {
 				f.stakingKeeper.EXPECT().GetBondedValidatorsByPower(gomock.Any()).Return([]stakingtypes.Validator{}, nil)
 			},
