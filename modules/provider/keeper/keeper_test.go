@@ -96,7 +96,7 @@ func TestCollectFeesFromConsumers(t *testing.T) {
 		name              string
 		feesPerBlock      sdk.Coin
 		setupConsumers    func(t *testing.T, f *fixture)
-		expectedTotalFees math.Int
+		expectedTotalFees sdk.Coin
 		error             error
 	}{
 		{
@@ -131,7 +131,7 @@ func TestCollectFeesFromConsumers(t *testing.T) {
 					sdk.NewCoins(sdk.NewCoin(params.FeesPerBlock.Denom, math.NewInt(1000))),
 				).Return(nil)
 			},
-			expectedTotalFees: math.NewInt(1000),
+			expectedTotalFees: sdk.NewCoin(denom, math.NewInt(1000)),
 		},
 		{
 			name:         "skip consumer with insufficient balance",
@@ -156,7 +156,7 @@ func TestCollectFeesFromConsumers(t *testing.T) {
 				// Insufficient balance - less than feesPerBlock
 				f.bankKeeper.EXPECT().GetBalance(gomock.Any(), addr, params.FeesPerBlock.Denom).Return(sdk.NewCoin(params.FeesPerBlock.Denom, math.NewInt(100)))
 			},
-			expectedTotalFees: math.ZeroInt(),
+			expectedTotalFees: sdk.NewCoin(denom, math.ZeroInt()),
 		},
 		{
 			name:         "skip inactive consumers",
@@ -175,7 +175,7 @@ func TestCollectFeesFromConsumers(t *testing.T) {
 				consumer.ModuleAccountAddress = consumerAddr
 				require.NoError(t, f.keeper.ConsumerChains.Set(f.ctx, consumer.ChainId, consumer))
 			},
-			expectedTotalFees: math.ZeroInt(),
+			expectedTotalFees: sdk.NewCoin(denom, math.ZeroInt()),
 		},
 		{
 			name:         "collect from multiple active consumers",
@@ -233,7 +233,7 @@ func TestCollectFeesFromConsumers(t *testing.T) {
 					sdk.NewCoins(sdk.NewCoin(params.FeesPerBlock.Denom, math.NewInt(500))),
 				).Return(nil)
 			},
-			expectedTotalFees: math.NewInt(1000),
+			expectedTotalFees: sdk.NewCoin(denom, math.NewInt(1000)),
 		},
 		{
 			name:         "no consumers registered",
@@ -241,7 +241,7 @@ func TestCollectFeesFromConsumers(t *testing.T) {
 			setupConsumers: func(t *testing.T, f *fixture) {
 				// No consumers to setup
 			},
-			expectedTotalFees: math.ZeroInt(),
+			expectedTotalFees: sdk.NewCoin(denom, math.ZeroInt()),
 		},
 		{
 			name:         "bank transfer fails",
@@ -270,7 +270,7 @@ func TestCollectFeesFromConsumers(t *testing.T) {
 					gomock.Any(),
 				).Return(sdkerrors.ErrInsufficientFunds)
 			},
-			expectedTotalFees: math.ZeroInt(),
+			expectedTotalFees: sdk.NewCoin(denom, math.ZeroInt()),
 			error:             fmt.Errorf("failed to collect fees from chain consumer-1: insufficient funds"),
 		},
 		{
@@ -281,7 +281,7 @@ func TestCollectFeesFromConsumers(t *testing.T) {
 				consumer.ModuleAccountAddress = "invalid-address"
 				require.NoError(t, f.keeper.ConsumerChains.Set(f.ctx, consumer.ChainId, consumer))
 			},
-			expectedTotalFees: math.ZeroInt(),
+			expectedTotalFees: sdk.NewCoin(denom, math.ZeroInt()),
 			error:             fmt.Errorf("failed to parse module account address for chain consumer-1: decoding bech32 failed: invalid separator index -1"),
 		},
 	}
