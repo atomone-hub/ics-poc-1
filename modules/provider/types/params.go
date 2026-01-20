@@ -4,10 +4,11 @@ import (
 	"fmt"
 
 	"cosmossdk.io/math"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // NewParams creates a new Params instance.
-func NewParams(feesPerBlock math.Int, downtimeSlashingWindow int64) Params {
+func NewParams(feesPerBlock sdk.Coin, downtimeSlashingWindow int64) Params {
 	return Params{
 		FeesPerBlock:           feesPerBlock,
 		DowntimeSlashingWindow: downtimeSlashingWindow,
@@ -17,8 +18,8 @@ func NewParams(feesPerBlock math.Int, downtimeSlashingWindow int64) Params {
 // DefaultParams returns a default set of parameters.
 func DefaultParams() Params {
 	return NewParams(
-		math.NewInt(1000), // Default fees per block
-		int64(10000),      // Default downtime slashing window (blocks)
+		sdk.NewCoin("photon", math.NewInt(1000)), // Default fees per block
+		int64(10000),                             // Default downtime slashing window (blocks)
 	)
 }
 

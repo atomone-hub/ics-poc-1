@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/telemetry"
 
@@ -15,7 +16,32 @@ import (
 func BeginBlocker(ctx context.Context, k keeper.Keeper) error {
 	defer telemetry.ModuleMeasureSince(types.ModuleName, telemetry.Now(), telemetry.MetricKeyBeginBlocker)
 
-	// TODO calculate incentives and substract from consumers accounts
+	// Get params
+	params, err := k.Params.Get(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get params: %w", err)
+	}
+
+	// Skip if fees per block is zero
+	if params.FeesPerBlock.IsZero() {
+		return nil
+	}
+
+	// Collect fees from all active consumer chains
+	totalFeesCollected, err := k.CollectFeesFromConsumers(ctx, params.FeesPerBlock)
+	if err != nil {
+		return err
+	}
+
+	// If no fees were collected, return early
+	if totalFeesCollected.IsZero() {
+		return nil
+	}
+
+	// Distribute collected fees to validators
+	if err := k.DistributeFeesToValidators(ctx, totalFeesCollected); err != nil {
+		return fmt.Errorf("failed to distribute fees to validators: %w", err)
+	}
 
 	return nil
 }

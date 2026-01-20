@@ -1,6 +1,5 @@
 BUILDDIR ?= $(CURDIR)/build
 
-
 BUILD_TARGETS := build install
 build: BUILD_ARGS=-o $(BUILDDIR)/
 
@@ -72,9 +71,15 @@ test-short:
 lint-fix:
 	golangci-lint run --fix
 
+# generate mocks
+mocks:
+	@go install go.uber.org/mock/mockgen@v0.6.0
+	sh ./scripts/mockgen.sh
+.PHONY: mocks
+
 proto-gen:
 	@echo "--> Generating Protobuf files"
 	buf generate --path="./proto/ics" --template="./proto/buf.gen.yaml" --config="buf.yaml"
 	mv modules/ics/provider/v1/* modules/provider/types; mv modules/ics/provider/module/v1/* modules/provider/types; rm -r modules/ics
 
-.PHONY: test test-short lint-fix proto-gen
+.PHONY: mocks test test-short lint-fix proto-gen

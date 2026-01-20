@@ -2,6 +2,7 @@ syntax = "proto3";
 package ics.provider.v1;
 
 import "amino/amino.proto";
+import "cosmos/base/v1beta1/coin.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 
@@ -13,9 +14,10 @@ message Params {
   option (gogoproto.equal) = true;
 
   // fees_per_block is the fee charged per block for consumer chain operation.
-  string fees_per_block = 1 [
-    (cosmos_proto.scalar) = "cosmos.Int",
-    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+  cosmos.base.v1beta1.Coin fees_per_block = 1 [
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins",
+    (amino.encoding) = "legacy_coins",
+    (amino.dont_omitempty) = true,
     (gogoproto.nullable) = false
   ];
 
