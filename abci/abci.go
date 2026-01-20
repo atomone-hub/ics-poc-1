@@ -51,7 +51,7 @@ func (m *Multiplexer) CheckTx(ctx context.Context, req *abci.RequestCheckTx) (*a
 		return &abci.ResponseCheckTx{Code: 1, Log: fmt.Sprintf("unknown chain: %s", chainID)}, nil
 	}
 
-	if !m.initializedChains[chainID] {
+	if !m.initializedConsumerChains[chainID] {
 		return &abci.ResponseCheckTx{Code: 1, Log: fmt.Sprintf("chain not initialized: %s", chainID)}, nil
 	}
 
@@ -61,28 +61,37 @@ func (m *Multiplexer) CheckTx(ctx context.Context, req *abci.RequestCheckTx) (*a
 func (m *Multiplexer) InitChain(ctx context.Context, req *abci.RequestInitChain) (*abci.ResponseInitChain, error) {
 	m.logger.Debug("InitChain", "chain_id", req.ChainId)
 
+	providerResp, err := m.providerChain.InitChain(req)
+	if err != nil {
+		return nil, err
+	}
+
+	m.providerValidators = providerResp.Validators
+	m.providerConsensusParams = providerResp.ConsensusParams
+
+	response := &abci.ResponseInitChain{
+		ConsensusParams: providerResp.ConsensusParams,
+		Validators:      providerResp.Validators,
+	}
+
+	chainHashes := make(map[string][]byte)
+	chainHashes[m.providerChainID] = providerResp.AppHash
+
 	type result struct {
 		chainID  string
 		response *abci.ResponseInitChain
 		err      error
 	}
 
-	// Include provider chain in the count
-	numChains := len(m.chainHandlers) + 1
-	results := make(chan result, numChains)
+	results := make(chan result, len(m.chainHandlers))
 	var wg sync.WaitGroup
 
-	// Call provider chain first
-	wg.Go(func() {
-		resp, err := m.providerChain.InitChain(req)
-		results <- result{chainID: req.ChainId, response: resp, err: err}
-	})
-
-	// Then call consumer chains
 	for chainID, handler := range m.chainHandlers {
 		wg.Go(func() {
 			consumerReq := *req
 			consumerReq.ChainId = chainID
+			consumerReq.Validators = m.providerValidators
+			consumerReq.ConsensusParams = m.providerConsensusParams
 
 			// Load consumer chain's own genesis state from its home directory
 			appState, err := handler.config.LoadGenesisAppState()
@@ -103,28 +112,14 @@ func (m *Multiplexer) InitChain(ctx context.Context, req *abci.RequestInitChain)
 		close(results)
 	}()
 
-	response := &abci.ResponseInitChain{}
-	chainHashes := make(map[string][]byte)
-
 	for res := range results {
 		if res.err != nil {
-			if res.chainID == m.providerChainID {
-				return nil, res.err
-			}
-			m.logger.Error("InitChain failed for consumer chain, skipping",
-				"chain_id", res.chainID, "error", res.err)
+			m.logger.Error("InitChain failed for consumer chain, skipping", "chain_id", res.chainID, "error", res.err)
 			continue
 		}
 
 		chainHashes[res.chainID] = res.response.AppHash
-
-		m.initializedChains[res.chainID] = true
-
-		// Only use ConsensusParams and Validators from provider chain
-		if res.chainID == m.providerChainID {
-			response.ConsensusParams = res.response.ConsensusParams
-			response.Validators = append(response.Validators, res.response.Validators...)
-		}
+		m.initializedConsumerChains[res.chainID] = true
 	}
 
 	// Combine app hashes in sorted order by chain ID
@@ -163,7 +158,7 @@ func (m *Multiplexer) ProcessProposal(ctx context.Context, req *abci.RequestProc
 				m.logger.Debug("Transaction for unexisting chain in proposal, skipping...", "chain_id", chainID)
 				continue
 			}
-			if !m.initializedChains[chainID] {
+			if !m.initializedConsumerChains[chainID] {
 				m.logger.Debug("Transaction for uninitialized chain in proposal, skipping...", "chain_id", chainID)
 				continue
 			}
@@ -323,7 +318,7 @@ func (m *Multiplexer) FinalizeBlock(ctx context.Context, req *abci.RequestFinali
 
 	// Initialize any new active chains
 	for chainID := range m.activeChains {
-		if err := m.initChainIfNeeded(chainID, req.Height, req.Time); err != nil {
+		if _, err := m.initChainIfNeeded(chainID, req.Height, req.Time); err != nil {
 			m.logger.Error("Failed to initialize chain", "chain_id", chainID, "error", err)
 		}
 	}
@@ -421,7 +416,7 @@ func (m *Multiplexer) Commit(ctx context.Context, req *abci.RequestCommit) (*abc
 
 	for chainID, handler := range m.chainHandlers {
 		// Only commit if the chain has been initialized
-		if !m.initializedChains[chainID] {
+		if !m.initializedConsumerChains[chainID] {
 			m.logger.Debug("Skipping Commit for uninitialized chain", "chain_id", chainID)
 			continue
 		}

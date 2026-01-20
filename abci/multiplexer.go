@@ -21,9 +21,9 @@ import (
 	"github.com/cometbft/cometbft/node"
 	"github.com/cometbft/cometbft/p2p"
 	pvm "github.com/cometbft/cometbft/privval"
+	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/cometbft/cometbft/proxy"
 	"github.com/cometbft/cometbft/rpc/client/local"
-	cmttypes "github.com/cometbft/cometbft/types"
 	db "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -75,14 +75,14 @@ type Multiplexer struct {
 	chainHandlers map[string]*ChainHandler
 	// rejectedConsumerChains tracks consumer chains that rejected the current proposal
 	rejectedConsumerChains map[string]bool
-	// initializedChains tracks which chains have had InitChain called
-	initializedChains map[string]bool
+	// initializedConsumerChains tracks which consumer chains have had InitChain called
+	initializedConsumerChains map[string]bool
 	// activeChains tracks the list of active chains from the provider module
 	activeChains map[string]bool
-	// genesisValidators stores the initial validators from InitChain for use with dynamic consumer chains
-	genesisValidators []abci.ValidatorUpdate
-	// genesisConsensusParams stores the initial consensus params from InitChain for use with dynamic consumer chains
-	genesisConsensusParams *cmttypes.ConsensusParams
+	// providerValidators stores the validators from the provider's InitChain response for use with consumer chains
+	providerValidators []abci.ValidatorUpdate
+	// providerConsensusParams stores the initial consensus params from the provider's InitChain for use with consumer chains
+	providerConsensusParams *cmtproto.ConsensusParams
 	// cmNode is the comet node which has been created (of the provider chain).
 	cmNode *node.Node
 	// ctx is the context which is passed to the comet, grpc and api server starting functions.
@@ -112,16 +112,16 @@ func NewMultiplexer(
 	}
 
 	mp := &Multiplexer{
-		svrCtx:                 svrCtx,
-		svrCfg:                 svrCfg,
-		clientContext:          clientCtx,
-		providerCreator:        providerCreator,
-		logger:                 logger,
-		chainHandlers:          make(map[string]*ChainHandler, len(chainConfig.Chains)),
-		rejectedConsumerChains: make(map[string]bool),
-		initializedChains:      make(map[string]bool),
-		activeChains:           make(map[string]bool),
-		chainConfig:            chainConfig,
+		svrCtx:                    svrCtx,
+		svrCfg:                    svrCfg,
+		clientContext:             clientCtx,
+		providerCreator:           providerCreator,
+		logger:                    logger,
+		chainHandlers:             make(map[string]*ChainHandler, len(chainConfig.Chains)),
+		rejectedConsumerChains:    make(map[string]bool),
+		initializedConsumerChains: make(map[string]bool),
+		activeChains:              make(map[string]bool),
+		chainConfig:               chainConfig,
 	}
 
 	return mp, nil
@@ -191,26 +191,34 @@ func (m *Multiplexer) startNativeProvider() error {
 
 // loadGenesisValues loads validators and consensus params from the genesis document.
 func (m *Multiplexer) loadGenesisValues() error {
+	// skip fetching if we have data
+	if len(m.providerValidators) != 0 && m.providerConsensusParams != nil {
+		return nil
+	}
+
 	genDocProvider := GetGenDocProvider(m.svrCtx.Config)
 	genDoc, err := genDocProvider()
 	if err != nil {
 		return fmt.Errorf("failed to load genesis doc: %w", err)
 	}
 
-	// Convert genesis validators to ABCI validator updates
-	m.genesisValidators = make([]abci.ValidatorUpdate, 0, len(genDoc.Validators))
+	// Convert genesis validators to ABCI validator updates as fallback
+	// These will be overwritten by the provider's InitChain response validators
+	m.providerValidators = make([]abci.ValidatorUpdate, 0, len(genDoc.Validators))
 	for _, val := range genDoc.Validators {
 		pubKey, err := encoding.PubKeyToProto(val.PubKey)
 		if err != nil {
 			return fmt.Errorf("failed to convert validator pubkey: %w", err)
 		}
-		m.genesisValidators = append(m.genesisValidators, abci.ValidatorUpdate{
+		m.providerValidators = append(m.providerValidators, abci.ValidatorUpdate{
 			PubKey: pubKey,
 			Power:  val.Power,
 		})
 	}
 
-	m.genesisConsensusParams = genDoc.ConsensusParams
+	consensusParams := genDoc.ConsensusParams.ToProto()
+	m.providerConsensusParams = &consensusParams
+
 	return nil
 }
 
@@ -531,57 +539,48 @@ func (m *Multiplexer) validateActiveChains() {
 
 // initChainIfNeeded initializes a chain if it hasn't been initialized yet.
 // Checks chain state via Info to detect already-initialized chains after restart.
-func (m *Multiplexer) initChainIfNeeded(chainID string, height int64, blockTime time.Time) error {
-	if m.initializedChains[chainID] {
-		return nil
+func (m *Multiplexer) initChainIfNeeded(chainID string, height int64, blockTime time.Time) ([]byte, error) {
+	if m.initializedConsumerChains[chainID] {
+		return nil, nil
 	}
 
 	handler, exists := m.chainHandlers[chainID]
 	if !exists {
-		return fmt.Errorf("chain handler not found for chain_id: %s", chainID)
+		return nil, fmt.Errorf("chain handler not found for chain_id: %s", chainID)
 	}
 
 	// Check if chain has state (already initialized)
 	infoResp, err := handler.app.Info(&abci.RequestInfo{})
 	if err == nil && (infoResp.LastBlockHeight > 0 || len(infoResp.LastBlockAppHash) > 0) {
 		m.logger.Info("Chain already initialized", "chain_id", chainID, "height", infoResp.LastBlockHeight)
-		m.initializedChains[chainID] = true
-		return nil
+		m.initializedConsumerChains[chainID] = true
+		return nil, nil
 	}
 
 	m.logger.Info("Initializing new consumer chain", "chain_id", chainID, "height", height)
 
-	// Use stored genesis values, falling back to defaults if not available
-	consensusParams := m.genesisConsensusParams
-	if consensusParams == nil {
-		consensusParams = cmttypes.DefaultConsensusParams()
-	}
-
 	// Load consumer chain's own genesis state from its home directory
 	appState, err := handler.config.LoadGenesisAppState()
 	if err != nil {
-		return fmt.Errorf("failed to load genesis for chain %s: %w", chainID, err)
+		return nil, fmt.Errorf("failed to load genesis for chain %s: %w", chainID, err)
 	}
 
-	protoConsensusParams := consensusParams.ToProto()
 	initReq := &abci.RequestInitChain{
 		Time:            blockTime,
 		ChainId:         chainID,
-		ConsensusParams: &protoConsensusParams,
-		Validators:      m.genesisValidators,
+		ConsensusParams: m.providerConsensusParams,
+		Validators:      m.providerValidators,
 		AppStateBytes:   appState,
 		InitialHeight:   height,
 	}
 
-	_, err = handler.app.InitChain(initReq)
+	resp, err := handler.app.InitChain(initReq)
 	if err != nil {
-		return fmt.Errorf("failed to initialize chain %s: %w", chainID, err)
+		return nil, fmt.Errorf("failed to initialize chain %s: %w", chainID, err)
 	}
+	m.initializedConsumerChains[chainID] = true
 
-	m.initializedChains[chainID] = true
-	m.logger.Info("Successfully initialized consumer chain", "chain_id", chainID)
-
-	return nil
+	return resp.AppHash, nil
 }
 
 // updateActiveChains updates the list of active chains from the provider module
