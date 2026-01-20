@@ -60,7 +60,6 @@ func newConsumerChain() (*chain, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	tempApp := consumerApp.New(log.NewNopLogger(), dbm.NewMemDB(), nil, true, simtestutil.NewAppOptionsWithFlagHome(tmpDir))
 
 	return &chain{

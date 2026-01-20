@@ -63,7 +63,8 @@ consumer-start: build
 	$(consumerd) start --with-comet=false --transport=grpc --rpc.grpc_laddr tcp://127.0.0.1:36659 --grpc.enable=false --log_level "debug"
 
 docker-build:
-	@docker build -t ics-e2e -f ./testapp/e2e/docker/e2e.Dockerfile --build-arg GO_VERSION=$(GO_REQUIRED_VERSION) .
+	@docker build -t ics-e2e-consumer -f ./testapp/e2e/docker/e2e.consumer.Dockerfile --build-arg GO_VERSION=$(GO_REQUIRED_VERSION) .
+	@docker build -t ics-e2e-provider -f ./testapp/e2e/docker/e2e.provider.Dockerfile --build-arg GO_VERSION=$(GO_REQUIRED_VERSION) .
 
 PACKAGES_E2E=$(shell cd testapp/e2e && go list ./... | grep 'e2e')
 test-e2e: 

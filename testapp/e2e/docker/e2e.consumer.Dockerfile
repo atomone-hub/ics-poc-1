@@ -21,4 +21,5 @@ COPY --from=testapp-builder /src/app/build/provider /usr/local/bin/
 EXPOSE 26656 26657 26658 1317 9090
 USER nonroot
 
-#ENTRYPOINT ["atomoned", "start"]
+ENTRYPOINT ["consumer", "start", "--with-comet=false", "--transport=grpc", "--rpc.grpc_laddr", "tcp://127.0.0.1:36659", "--grpc.enable=false", "--abci", "grpc", "--address","tcp://0.0.0.0:26658"]
+

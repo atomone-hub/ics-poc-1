@@ -45,7 +45,8 @@ const (
 	txCommand                    = "tx"
 	queryCommand                 = "query"
 	keysCommand                  = "keys"
-	providerHomePath              = "/home/nonroot/.provider"
+	providerHomePath              = "/home/nonroot/.ics-provider"
+	consumerHomePath              = "/home/nonroot/.ics-consumer"
 	uatoneDenom                  = "uatone"
 	minGasPrice                  = "0.00001"
 	gas                          = 200000
@@ -115,10 +116,11 @@ func TestIntegrationTestSuite(t *testing.T) {
 
 func (s *IntegrationTestSuite) SetupSuite() {
 	defer func() {
+		s.saveChainLogs(s.provider)
+		s.saveChainLogs(s.consumer)
 		if s.T().Failed() {
 			defer s.TearDownSuite()
-			s.saveChainLogs(s.provider)
-			s.saveChainLogs(s.consumer)
+			
 		}
 	}()
 
@@ -173,15 +175,16 @@ func (s *IntegrationTestSuite) SetupSuite() {
 
 	s.T().Logf("starting e2e infrastructure for provider; chain-id: %s; datadir: %s", s.provider.id, s.provider.dataDir)
 	s.initNodes(s.provider)
+	s.configureICS(s.provider,s.consumer)
 	s.initGenesis(s.provider, vestingMnemonic, jailedValMnemonic)
 	s.initValidatorConfigs(s.provider)
-	s.runValidators(s.provider, 0)
+	s.runValidators(s.provider, 10)
 }
 
 
 
 func (s *IntegrationTestSuite) TearDownSuite() {
-	if str := os.Getenv("ICS_E2E_SKIP_CLEANUP"); len(str) > 0 {
+	if str := os.Getenv("ICS_E2E_SKIP_CLEANUP"); len(str) > 0 || true {
 		skipCleanup, err := strconv.ParseBool(str)
 		s.Require().NoError(err)
 
@@ -207,8 +210,42 @@ func (s *IntegrationTestSuite) TearDownSuite() {
 	}
 }
 
+func (s *IntegrationTestSuite) configureICS(provider *chain, consumer *chain) {
+	val0ConfigDir := provider.validators[0].configDir()
+	icsConfFile, err := os.Create(filepath.Join(val0ConfigDir, "config", "ics.toml"))
+	if err != nil {
+		panic(err)
+	}
+
+	defer icsConfFile.Close()
+	consumerDNSAddr := consumer.validators[0].instanceName()
+	// consumerDNSAddr := s.valResources[consumer.id][0].GetHostPort("26658/tcp")
+	consumerChainID := consumer.id
+	consumerPort := 26658
+	content := fmt.Sprintf("[[chains]]\nchain_id = \"%s\"\ngrpc_address = \"tcp://%s:%d\"\n",consumerChainID,consumerDNSAddr, consumerPort)
+
+	_, err = icsConfFile.WriteString(content)
+	if err != nil {
+		panic(err)
+	}
+
+	// copy the genesis file to the remaining validators
+	for _, val := range provider.validators[1:] {
+		_, err := copyFile(
+			filepath.Join(val0ConfigDir, "config", "ics.toml"),
+			filepath.Join(val.configDir(), "config", "ics.toml"),
+		)
+		s.Require().NoError(err)
+	}
+}
+
 func (s *IntegrationTestSuite) initNodes(c *chain) {
-	s.Require().NoError(c.createAndInitValidators(2))
+
+	if strings.Contains(c.id, "provider") {
+		s.Require().NoError(c.createAndInitValidators(2))
+	}else{
+		s.Require().NoError(c.createAndInitValidators(1))
+	}
 	/* Adding 4 accounts to val0 local directory
 	c.genesisAccounts[0]: Relayer Account
 	c.genesisAccounts[1]: ICA Owner
@@ -497,6 +534,7 @@ func (s *IntegrationTestSuite) initGenesis(c *chain, vestingMnemonic, jailedValM
 func (s *IntegrationTestSuite) initValidatorConfigs(c *chain) {
 	for i, val := range c.validators {
 		tmCfgPath := filepath.Join(val.configDir(), "config", "config.toml")
+		s.T().Logf("validator config dir: %s", tmCfgPath)
 
 		vpr := viper.New()
 		vpr.SetConfigFile(tmCfgPath)
@@ -551,7 +589,16 @@ func (s *IntegrationTestSuite) runValidators(c *chain, portOffset int) {
 		s.T().Logf("starting consumer %s validator containers...", c.id)
 	}
 
-	const dockerImage = "ics-e2e"
+	var dockerImage string
+	var homePath string
+
+	if strings.Contains(c.id, "provider") {
+		dockerImage = "ics-e2e-provider"
+		homePath = providerHomePath
+	}else{
+		dockerImage = "ics-e2e-consumer"
+		homePath = consumerHomePath
+	}
 
 	s.valResources[c.id] = make([]*dockertest.Resource, len(c.validators))
 	for i, val := range c.validators {
@@ -559,7 +606,7 @@ func (s *IntegrationTestSuite) runValidators(c *chain, portOffset int) {
 			Name:      val.instanceName(),
 			NetworkID: s.dkrNet.Network.ID,
 			Mounts: []string{
-				fmt.Sprintf("%s/:%s", val.configDir(), providerHomePath),
+				fmt.Sprintf("%s/:%s", val.configDir(), homePath),
 			},
 			Repository: dockerImage,
 		}
@@ -579,6 +626,7 @@ func (s *IntegrationTestSuite) runValidators(c *chain, portOffset int) {
 				"9090/tcp":  {{HostIP: "", HostPort: fmt.Sprintf("%d", 9090+portOffset)}},
 				"26656/tcp": {{HostIP: "", HostPort: fmt.Sprintf("%d", 26656+portOffset)}},
 				"26657/tcp": {{HostIP: "", HostPort: fmt.Sprintf("%d", 26657+portOffset)}},
+				"26658/tcp": {{HostIP: "", HostPort: fmt.Sprintf("%d", 26658+portOffset)}},
 			}
 		}
 
