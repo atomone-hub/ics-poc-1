@@ -29,6 +29,9 @@ func TestLoadConfig_WithValidFile(t *testing.T) {
 	if cfg.Chains[0].GRPCAddress != "tcp://localhost:9090" {
 		t.Errorf("expected address 'tcp://localhost:9090', got '%s'", cfg.Chains[0].GRPCAddress)
 	}
+	if cfg.Chains[0].Home != "/tmp/chain1" {
+		t.Errorf("expected home '/tmp/chain1', got '%s'", cfg.Chains[0].Home)
+	}
 
 	// Verify second chain
 	if cfg.Chains[1].ChainID != "chain-2" {
@@ -36,6 +39,9 @@ func TestLoadConfig_WithValidFile(t *testing.T) {
 	}
 	if cfg.Chains[1].GRPCAddress != "tcp://localhost:9091" {
 		t.Errorf("expected address 'tcp://localhost:9091', got '%s'", cfg.Chains[1].GRPCAddress)
+	}
+	if cfg.Chains[1].Home != "/tmp/chain2" {
+		t.Errorf("expected home '/tmp/chain2', got '%s'", cfg.Chains[1].Home)
 	}
 }
 
@@ -82,6 +88,7 @@ func TestValidate_Success(t *testing.T) {
 			{
 				ChainID:     "test-chain",
 				GRPCAddress: "grpc://localhost:9090",
+				Home:        "/home/test/.test-chain",
 			},
 		},
 	}
@@ -98,6 +105,7 @@ func TestValidate_MissingChainID(t *testing.T) {
 			{
 				ChainID:     "",
 				GRPCAddress: "grpc://localhost:9090",
+				Home:        "/home/test/.test-chain",
 			},
 		},
 	}
@@ -114,6 +122,7 @@ func TestValidate_MissingAddress(t *testing.T) {
 			{
 				ChainID:     "test-chain",
 				GRPCAddress: "",
+				Home:        "/home/test/.test-chain",
 			},
 		},
 	}
@@ -124,16 +133,35 @@ func TestValidate_MissingAddress(t *testing.T) {
 	}
 }
 
+func TestValidate_MissingHome(t *testing.T) {
+	cfg := &Config{
+		Chains: []ChainInfo{
+			{
+				ChainID:     "test-chain",
+				GRPCAddress: "grpc://localhost:9090",
+				Home:        "",
+			},
+		},
+	}
+
+	err := cfg.Validate()
+	if err == nil {
+		t.Fatal("expected validation error for missing home, got nil")
+	}
+}
+
 func TestValidate_MultipleChains(t *testing.T) {
 	cfg := &Config{
 		Chains: []ChainInfo{
 			{
 				ChainID:     "chain-1",
 				GRPCAddress: "grpc://localhost:9090",
+				Home:        "/home/test/.chain-1",
 			},
 			{
 				ChainID:     "chain-2",
 				GRPCAddress: "grpc://localhost:9091",
+				Home:        "/home/test/.chain-2",
 			},
 		},
 	}

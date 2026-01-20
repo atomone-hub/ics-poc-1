@@ -33,7 +33,7 @@ provider-start: build
 	# Decrease voting period to 5min
 	jq '.app_state.gov.params.voting_period = "300s"' $(provider_home)/config/genesis.json > /tmp/gen
 	mv /tmp/gen $(provider_home)/config/genesis.json
-	printf "[[chains]]\nchain_id = \"consumer-localnet\"\ngrpc_address = \"tcp://localhost:26658\"\n" > $(provider_home)/config/ics.toml
+	printf "[[chains]]\nchain_id = \"consumer-localnet\"\ngrpc_address = \"tcp://localhost:26658\"\nhome = \"$(HOME)/.consumer-localnet\"\n" > $(provider_home)/config/ics.toml
 	$(providerd) start --rpc.grpc_laddr tcp://127.0.0.1:36658
 
 consumer_home=~/.consumer-localnet
@@ -48,8 +48,6 @@ consumer-start: build
 	$(consumerd) genesis add-genesis-account val 1000000000000uatone --chain-id consumer-localnet
 	$(consumerd) keys add user
 	$(consumerd) genesis add-genesis-account user 1000000000uatone --chain-id consumer-localnet
-	$(consumerd) genesis gentx val 1000000000uatone
-	$(consumerd) genesis collect-gentxs
 
 	# Set validator gas prices
 	sed -i.bak 's#^minimum-gas-prices = .*#minimum-gas-prices = "0.01uatone,0.01uphoton"#g' $(consumer_home)/config/app.toml

@@ -53,6 +53,7 @@ type ChainHandler struct {
 	ChainID string
 	conn    *grpc.ClientConn
 	app     *RemoteABCIClient
+	config  config.ChainInfo
 }
 
 // Multiplexer implements ABCI Application interface and routes requests to multiple chain applications
@@ -223,7 +224,9 @@ func (m *Multiplexer) initChainHandlers() error {
 
 		handler := &ChainHandler{
 			ChainID: chainInfo.ChainID,
+			conn:    chainConn,
 			app:     NewRemoteABCIClient(chainConn),
+			config:  chainInfo,
 		}
 
 		if _, exists := m.chainHandlers[chainInfo.ChainID]; exists {
@@ -554,13 +557,19 @@ func (m *Multiplexer) initChainIfNeeded(chainID string, height int64, blockTime 
 		consensusParams = cmttypes.DefaultConsensusParams()
 	}
 
+	// Load consumer chain's own genesis state from its home directory
+	appState, err := handler.config.LoadGenesisAppState()
+	if err != nil {
+		return fmt.Errorf("failed to load genesis for chain %s: %w", chainID, err)
+	}
+
 	protoConsensusParams := consensusParams.ToProto()
 	initReq := &abci.RequestInitChain{
 		Time:            blockTime,
 		ChainId:         chainID,
 		ConsensusParams: &protoConsensusParams,
 		Validators:      m.genesisValidators,
-		AppStateBytes:   []byte{},
+		AppStateBytes:   appState,
 		InitialHeight:   height,
 	}
 

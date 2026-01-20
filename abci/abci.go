@@ -84,6 +84,15 @@ func (m *Multiplexer) InitChain(ctx context.Context, req *abci.RequestInitChain)
 			consumerReq := *req
 			consumerReq.ChainId = chainID
 
+			// Load consumer chain's own genesis state from its home directory
+			appState, err := handler.config.LoadGenesisAppState()
+			if err != nil {
+				m.logger.Error("Failed to load genesis for consumer chain", "chain_id", chainID, "error", err)
+				results <- result{chainID: chainID, response: nil, err: err}
+				return
+			}
+			consumerReq.AppStateBytes = appState
+
 			resp, err := handler.app.InitChain(&consumerReq)
 			results <- result{chainID: chainID, response: resp, err: err}
 		})
