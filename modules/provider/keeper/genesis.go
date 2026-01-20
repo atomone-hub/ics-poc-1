@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/atomone-hub/ics-poc-1/modules/provider/types"
 )
@@ -14,6 +15,17 @@ func (k Keeper) InitGenesis(ctx context.Context, genState types.GenesisState) er
 
 	// Initialize consumer chains
 	for _, consumer := range genState.ConsumerChains {
+		if consumer.ModuleAccountAddress != "" {
+			return fmt.Errorf("module account address for %s must be left empty at init genesis", consumer.ChainId)
+		}
+
+		moduleAccount, err := k.CreateConsumerAccount(ctx, consumer.ChainId)
+		if err != nil {
+			return fmt.Errorf("failed to create module account for %s: %w", consumer.ChainId, err)
+		}
+
+		consumer.ModuleAccountAddress = moduleAccount
+
 		if err := k.ConsumerChains.Set(ctx, consumer.ChainId, consumer); err != nil {
 			return err
 		}

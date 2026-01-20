@@ -111,7 +111,7 @@ func TestCollectFeesFromConsumers(t *testing.T) {
 				f.authKeeper.EXPECT().SetAccount(gomock.Any(), gomock.Any()).AnyTimes()
 
 				// Create consumer module account
-				consumerAddr, err := f.keeper.CreateConsumerModuleAccount(f.ctx, consumer.ChainId)
+				consumerAddr, err := f.keeper.CreateConsumerAccount(f.ctx, consumer.ChainId)
 				require.NoError(t, err)
 				consumer.ModuleAccountAddress = consumerAddr
 
@@ -144,7 +144,7 @@ func TestCollectFeesFromConsumers(t *testing.T) {
 				f.authKeeper.EXPECT().NewAccountWithAddress(gomock.Any(), moduleAddr).Return(authtypes.NewBaseAccountWithAddress(moduleAddr)).AnyTimes()
 				f.authKeeper.EXPECT().SetAccount(gomock.Any(), gomock.Any()).AnyTimes()
 
-				consumerAddr, err := f.keeper.CreateConsumerModuleAccount(f.ctx, consumer.ChainId)
+				consumerAddr, err := f.keeper.CreateConsumerAccount(f.ctx, consumer.ChainId)
 				require.NoError(t, err)
 				consumer.ModuleAccountAddress = consumerAddr
 				require.NoError(t, f.keeper.ConsumerChains.Set(f.ctx, consumer.ChainId, consumer))
@@ -170,7 +170,7 @@ func TestCollectFeesFromConsumers(t *testing.T) {
 				f.authKeeper.EXPECT().NewAccountWithAddress(gomock.Any(), moduleAddr).Return(authtypes.NewBaseAccountWithAddress(moduleAddr)).AnyTimes()
 				f.authKeeper.EXPECT().SetAccount(gomock.Any(), gomock.Any()).AnyTimes()
 
-				consumerAddr, err := f.keeper.CreateConsumerModuleAccount(f.ctx, consumer.ChainId)
+				consumerAddr, err := f.keeper.CreateConsumerAccount(f.ctx, consumer.ChainId)
 				require.NoError(t, err)
 				consumer.ModuleAccountAddress = consumerAddr
 				require.NoError(t, f.keeper.ConsumerChains.Set(f.ctx, consumer.ChainId, consumer))
@@ -187,7 +187,7 @@ func TestCollectFeesFromConsumers(t *testing.T) {
 				f.authKeeper.EXPECT().NewAccountWithAddress(gomock.Any(), moduleAddr1).Return(authtypes.NewBaseAccountWithAddress(moduleAddr1)).AnyTimes()
 				f.authKeeper.EXPECT().SetAccount(gomock.Any(), gomock.Any()).AnyTimes()
 
-				consumerAddr1, err := f.keeper.CreateConsumerModuleAccount(f.ctx, consumer1.ChainId)
+				consumerAddr1, err := f.keeper.CreateConsumerAccount(f.ctx, consumer1.ChainId)
 				require.NoError(t, err)
 				consumer1.ModuleAccountAddress = consumerAddr1
 				require.NoError(t, f.keeper.ConsumerChains.Set(f.ctx, consumer1.ChainId, consumer1))
@@ -219,7 +219,7 @@ func TestCollectFeesFromConsumers(t *testing.T) {
 				f.authKeeper.EXPECT().GetModuleAddress("consumer_consumer-2").Return(moduleAddr2).AnyTimes()
 				f.authKeeper.EXPECT().NewAccountWithAddress(gomock.Any(), moduleAddr2).Return(authtypes.NewBaseAccountWithAddress(moduleAddr2)).AnyTimes()
 
-				consumerAddr2, err := f.keeper.CreateConsumerModuleAccount(f.ctx, consumer2.ChainId)
+				consumerAddr2, err := f.keeper.CreateConsumerAccount(f.ctx, consumer2.ChainId)
 				require.NoError(t, err)
 				consumer2.ModuleAccountAddress = consumerAddr2
 				require.NoError(t, f.keeper.ConsumerChains.Set(f.ctx, consumer2.ChainId, consumer2))
@@ -253,7 +253,7 @@ func TestCollectFeesFromConsumers(t *testing.T) {
 				f.authKeeper.EXPECT().NewAccountWithAddress(gomock.Any(), moduleAddr).Return(authtypes.NewBaseAccountWithAddress(moduleAddr)).AnyTimes()
 				f.authKeeper.EXPECT().SetAccount(gomock.Any(), gomock.Any()).AnyTimes()
 
-				consumerAddr, err := f.keeper.CreateConsumerModuleAccount(f.ctx, consumer.ChainId)
+				consumerAddr, err := f.keeper.CreateConsumerAccount(f.ctx, consumer.ChainId)
 				require.NoError(t, err)
 				consumer.ModuleAccountAddress = consumerAddr
 				require.NoError(t, f.keeper.ConsumerChains.Set(f.ctx, consumer.ChainId, consumer))
