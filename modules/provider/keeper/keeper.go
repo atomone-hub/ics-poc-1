@@ -10,6 +10,7 @@ import (
 	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	"github.com/atomone-hub/ics-poc-1/modules/provider/types"
 )
@@ -90,23 +91,17 @@ func (k Keeper) GetAllConsumerChains(ctx context.Context) ([]types.ConsumerChain
 	return consumers, err
 }
 
-// CreateConsumerModuleAccount creates a module account for a consumer chain.
-func (k Keeper) CreateConsumerModuleAccount(ctx context.Context, chainID string) (string, error) {
+// CreateConsumerAccount creates a module account for a consumer chain.
+func (k Keeper) CreateConsumerAccount(ctx context.Context, chainID string) (string, error) {
 	accountName := types.GetConsumerModuleAccountName(chainID)
+	addr := authtypes.NewModuleAddress(accountName)
 
 	// Check if account already exists
-	addr := k.authKeeper.GetModuleAddress(accountName)
-	if addr != nil {
-		// Account already exists, return its address
-		addrStr, err := k.addressCodec.BytesToString(addr)
-		if err != nil {
-			return "", err
-		}
-		return addrStr, nil
-	}
+	if acc := k.authKeeper.GetAccount(ctx, addr); acc == nil {
+		// Create the module account
+		k.authKeeper.SetAccount(ctx, k.authKeeper.NewAccountWithAddress(ctx, addr))
 
-	// Create the module account
-	k.authKeeper.SetAccount(ctx, k.authKeeper.NewAccountWithAddress(ctx, addr))
+	}
 
 	addrStr, err := k.addressCodec.BytesToString(addr)
 	if err != nil {
@@ -128,7 +123,7 @@ func (k Keeper) CollectFeesFromConsumers(ctx context.Context, feesPerBlock sdk.C
 		// Get consumer module account address
 		consumerAddr, err := k.addressCodec.StringToBytes(consumer.ModuleAccountAddress)
 		if err != nil {
-			return true, fmt.Errorf("failed to parse module account address for chain %s: %w", consumer.ChainId, err)
+			return true, fmt.Errorf("failed to parse module account address (%s) for chain %s: %w", consumer.ModuleAccountAddress, consumer.ChainId, err)
 		}
 
 		// Check if account has sufficient balance

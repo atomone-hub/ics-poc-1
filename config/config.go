@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/viper"
+
+	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 )
 
 // Config represents configuration for consumer chains
@@ -17,6 +19,22 @@ type Config struct {
 type ChainInfo struct {
 	ChainID     string `mapstructure:"chain_id"`
 	GRPCAddress string `mapstructure:"grpc_address"`
+	Home        string `mapstructure:"home"`
+}
+
+// GenesisFile returns the path to the genesis file for the chain
+func (c *ChainInfo) GenesisFile() string {
+	return filepath.Join(c.Home, "config", "genesis.json")
+}
+
+// LoadGenesisAppState loads and returns the app state bytes from the genesis file
+func (c *ChainInfo) LoadGenesisAppState() ([]byte, error) {
+	genesisFile := c.GenesisFile()
+	appGenesis, err := genutiltypes.AppGenesisFromFile(genesisFile)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load genesis from %s: %w", genesisFile, err)
+	}
+	return appGenesis.AppState, nil
 }
 
 func (c *Config) Validate() error {
@@ -26,6 +44,9 @@ func (c *Config) Validate() error {
 		}
 		if app.GRPCAddress == "" {
 			return fmt.Errorf("address required for %s", app.ChainID)
+		}
+		if app.Home == "" {
+			return fmt.Errorf("home required for %s", app.ChainID)
 		}
 	}
 

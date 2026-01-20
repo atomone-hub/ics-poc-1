@@ -81,7 +81,7 @@ func (k msgServer) AddConsumer(ctx context.Context, req *types.MsgAddConsumer) (
 	}
 
 	// Create module account for this consumer
-	moduleAccountAddr, err := k.CreateConsumerModuleAccount(ctx, req.ChainId)
+	moduleAccountAddr, err := k.CreateConsumerAccount(ctx, req.ChainId)
 	if err != nil {
 		return nil, errorsmod.Wrap(err, "failed to create module account")
 	}

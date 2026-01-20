@@ -104,14 +104,13 @@ func TestCollectFeesFromConsumers(t *testing.T) {
 			feesPerBlock: sdk.NewCoin(denom, math.NewInt(1000)),
 			setupConsumers: func(t *testing.T, f *fixture) {
 				consumer := DefaultConsumer
-				moduleAddr := defaultModuleAddr
 				// Mock auth keeper for module account creation
-				f.authKeeper.EXPECT().GetModuleAddress("consumer_consumer-1").Return(moduleAddr).AnyTimes()
-				f.authKeeper.EXPECT().NewAccountWithAddress(gomock.Any(), moduleAddr).Return(authtypes.NewBaseAccountWithAddress(moduleAddr)).AnyTimes()
+				f.authKeeper.EXPECT().GetAccount(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+				f.authKeeper.EXPECT().NewAccountWithAddress(gomock.Any(), gomock.Any()).Return(authtypes.NewBaseAccountWithAddress(defaultModuleAddr)).AnyTimes()
 				f.authKeeper.EXPECT().SetAccount(gomock.Any(), gomock.Any()).AnyTimes()
 
 				// Create consumer module account
-				consumerAddr, err := f.keeper.CreateConsumerModuleAccount(f.ctx, consumer.ChainId)
+				consumerAddr, err := f.keeper.CreateConsumerAccount(f.ctx, consumer.ChainId)
 				require.NoError(t, err)
 				consumer.ModuleAccountAddress = consumerAddr
 
@@ -138,13 +137,12 @@ func TestCollectFeesFromConsumers(t *testing.T) {
 			feesPerBlock: sdk.NewCoin(denom, math.NewInt(1000)),
 			setupConsumers: func(t *testing.T, f *fixture) {
 				consumer := DefaultConsumer
-				moduleAddr := defaultModuleAddr
 
-				f.authKeeper.EXPECT().GetModuleAddress("consumer_consumer-1").Return(moduleAddr).AnyTimes()
-				f.authKeeper.EXPECT().NewAccountWithAddress(gomock.Any(), moduleAddr).Return(authtypes.NewBaseAccountWithAddress(moduleAddr)).AnyTimes()
+				f.authKeeper.EXPECT().GetAccount(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+				f.authKeeper.EXPECT().NewAccountWithAddress(gomock.Any(), gomock.Any()).Return(authtypes.NewBaseAccountWithAddress(defaultModuleAddr)).AnyTimes()
 				f.authKeeper.EXPECT().SetAccount(gomock.Any(), gomock.Any()).AnyTimes()
 
-				consumerAddr, err := f.keeper.CreateConsumerModuleAccount(f.ctx, consumer.ChainId)
+				consumerAddr, err := f.keeper.CreateConsumerAccount(f.ctx, consumer.ChainId)
 				require.NoError(t, err)
 				consumer.ModuleAccountAddress = consumerAddr
 				require.NoError(t, f.keeper.ConsumerChains.Set(f.ctx, consumer.ChainId, consumer))
@@ -163,14 +161,13 @@ func TestCollectFeesFromConsumers(t *testing.T) {
 			feesPerBlock: sdk.NewCoin(denom, math.NewInt(1000)),
 			setupConsumers: func(t *testing.T, f *fixture) {
 				consumer := DefaultConsumer
-				moduleAddr := defaultModuleAddr
 				// Create inactive consumer (PENDING status)
 				consumer.Status = types.ConsumerStatus_CONSUMER_STATUS_PENDING
-				f.authKeeper.EXPECT().GetModuleAddress("consumer_consumer-1").Return(moduleAddr).AnyTimes()
-				f.authKeeper.EXPECT().NewAccountWithAddress(gomock.Any(), moduleAddr).Return(authtypes.NewBaseAccountWithAddress(moduleAddr)).AnyTimes()
+				f.authKeeper.EXPECT().GetAccount(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+				f.authKeeper.EXPECT().NewAccountWithAddress(gomock.Any(), gomock.Any()).Return(authtypes.NewBaseAccountWithAddress(defaultModuleAddr)).AnyTimes()
 				f.authKeeper.EXPECT().SetAccount(gomock.Any(), gomock.Any()).AnyTimes()
 
-				consumerAddr, err := f.keeper.CreateConsumerModuleAccount(f.ctx, consumer.ChainId)
+				consumerAddr, err := f.keeper.CreateConsumerAccount(f.ctx, consumer.ChainId)
 				require.NoError(t, err)
 				consumer.ModuleAccountAddress = consumerAddr
 				require.NoError(t, f.keeper.ConsumerChains.Set(f.ctx, consumer.ChainId, consumer))
@@ -182,12 +179,11 @@ func TestCollectFeesFromConsumers(t *testing.T) {
 			feesPerBlock: sdk.NewCoin(denom, math.NewInt(500)),
 			setupConsumers: func(t *testing.T, f *fixture) {
 				consumer1 := DefaultConsumer
-				moduleAddr1 := defaultModuleAddr
-				f.authKeeper.EXPECT().GetModuleAddress("consumer_consumer-1").Return(moduleAddr1).AnyTimes()
-				f.authKeeper.EXPECT().NewAccountWithAddress(gomock.Any(), moduleAddr1).Return(authtypes.NewBaseAccountWithAddress(moduleAddr1)).AnyTimes()
+				f.authKeeper.EXPECT().GetAccount(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+				f.authKeeper.EXPECT().NewAccountWithAddress(gomock.Any(), gomock.Any()).Return(authtypes.NewBaseAccountWithAddress(defaultModuleAddr)).AnyTimes()
 				f.authKeeper.EXPECT().SetAccount(gomock.Any(), gomock.Any()).AnyTimes()
 
-				consumerAddr1, err := f.keeper.CreateConsumerModuleAccount(f.ctx, consumer1.ChainId)
+				consumerAddr1, err := f.keeper.CreateConsumerAccount(f.ctx, consumer1.ChainId)
 				require.NoError(t, err)
 				consumer1.ModuleAccountAddress = consumerAddr1
 				require.NoError(t, f.keeper.ConsumerChains.Set(f.ctx, consumer1.ChainId, consumer1))
@@ -215,11 +211,7 @@ func TestCollectFeesFromConsumers(t *testing.T) {
 					"",
 				)
 
-				moduleAddr2 := sdk.AccAddress("consumer-2-module-account")
-				f.authKeeper.EXPECT().GetModuleAddress("consumer_consumer-2").Return(moduleAddr2).AnyTimes()
-				f.authKeeper.EXPECT().NewAccountWithAddress(gomock.Any(), moduleAddr2).Return(authtypes.NewBaseAccountWithAddress(moduleAddr2)).AnyTimes()
-
-				consumerAddr2, err := f.keeper.CreateConsumerModuleAccount(f.ctx, consumer2.ChainId)
+				consumerAddr2, err := f.keeper.CreateConsumerAccount(f.ctx, consumer2.ChainId)
 				require.NoError(t, err)
 				consumer2.ModuleAccountAddress = consumerAddr2
 				require.NoError(t, f.keeper.ConsumerChains.Set(f.ctx, consumer2.ChainId, consumer2))
@@ -248,12 +240,11 @@ func TestCollectFeesFromConsumers(t *testing.T) {
 			feesPerBlock: sdk.NewCoin(denom, math.NewInt(1000)),
 			setupConsumers: func(t *testing.T, f *fixture) {
 				consumer := DefaultConsumer
-				moduleAddr := defaultModuleAddr
-				f.authKeeper.EXPECT().GetModuleAddress("consumer_consumer-1").Return(moduleAddr).AnyTimes()
-				f.authKeeper.EXPECT().NewAccountWithAddress(gomock.Any(), moduleAddr).Return(authtypes.NewBaseAccountWithAddress(moduleAddr)).AnyTimes()
+				f.authKeeper.EXPECT().GetAccount(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+				f.authKeeper.EXPECT().NewAccountWithAddress(gomock.Any(), gomock.Any()).Return(authtypes.NewBaseAccountWithAddress(defaultModuleAddr)).AnyTimes()
 				f.authKeeper.EXPECT().SetAccount(gomock.Any(), gomock.Any()).AnyTimes()
 
-				consumerAddr, err := f.keeper.CreateConsumerModuleAccount(f.ctx, consumer.ChainId)
+				consumerAddr, err := f.keeper.CreateConsumerAccount(f.ctx, consumer.ChainId)
 				require.NoError(t, err)
 				consumer.ModuleAccountAddress = consumerAddr
 				require.NoError(t, f.keeper.ConsumerChains.Set(f.ctx, consumer.ChainId, consumer))
@@ -282,7 +273,7 @@ func TestCollectFeesFromConsumers(t *testing.T) {
 				require.NoError(t, f.keeper.ConsumerChains.Set(f.ctx, consumer.ChainId, consumer))
 			},
 			expectedTotalFees: sdk.NewCoin(denom, math.ZeroInt()),
-			error:             fmt.Errorf("failed to parse module account address for chain consumer-1: decoding bech32 failed: invalid separator index -1"),
+			error:             fmt.Errorf("failed to parse module account address (invalid-address) for chain consumer-1: decoding bech32 failed: invalid separator index -1"),
 		},
 	}
 

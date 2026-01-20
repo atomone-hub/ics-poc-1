@@ -33,7 +33,10 @@ provider-start: build
 	# Decrease voting period to 5min
 	jq '.app_state.gov.params.voting_period = "300s"' $(provider_home)/config/genesis.json > /tmp/gen
 	mv /tmp/gen $(provider_home)/config/genesis.json
-	printf "[[chains]]\nchain_id = \"consumer-localnet\"\ngrpc_address = \"tcp://localhost:26658\"\n" > $(provider_home)/config/ics.toml
+	# Add consumer chain as active in provider genesis
+	jq '.app_state.provider.consumer_chains = [{"chain_id": "consumer-localnet", "name": "Consumer Localnet", "version": "1.0.0", "status": 2, "added_at": 0, "sunset_at": 0, "module_account_address": ""}]' $(provider_home)/config/genesis.json > /tmp/gen
+	mv /tmp/gen $(provider_home)/config/genesis.json
+	printf "[[chains]]\nchain_id = \"consumer-localnet\"\ngrpc_address = \"tcp://localhost:26658\"\nhome = \"$(HOME)/.consumer-localnet\"\n" > $(provider_home)/config/ics.toml
 	$(providerd) start --rpc.grpc_laddr tcp://127.0.0.1:36658
 
 consumer_home=~/.consumer-localnet
@@ -48,7 +51,7 @@ consumer-start: build
 	$(consumerd) genesis add-genesis-account val 1000000000000uatone --chain-id consumer-localnet
 	$(consumerd) keys add user
 	$(consumerd) genesis add-genesis-account user 1000000000uatone --chain-id consumer-localnet
-	$(consumerd) genesis gentx val 1000000000uatone
+	$(consumerd) genesis gentx val 1000000000uatone # todo this should not be needed
 	$(consumerd) genesis collect-gentxs
 
 	# Set validator gas prices
