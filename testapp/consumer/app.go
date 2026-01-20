@@ -55,9 +55,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	"github.com/cosmos/cosmos-sdk/x/consensus"
-	consensusparamkeeper "github.com/cosmos/cosmos-sdk/x/consensus/keeper"
-	consensusparamtypes "github.com/cosmos/cosmos-sdk/x/consensus/types"
 	distr "github.com/cosmos/cosmos-sdk/x/distribution"
 	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
@@ -106,7 +103,6 @@ var (
 		auth.AppModuleBasic{},
 		vesting.AppModuleBasic{},
 		bank.AppModuleBasic{},
-		consensus.AppModuleBasic{},
 		gov.NewAppModuleBasic(
 			[]govclient.ProposalHandler{
 				paramsclient.ProposalHandler,
@@ -162,9 +158,8 @@ type App struct { // nolint: golint
 	// different fee-pool from the consumer chain ConsumerKeeper
 	DistrKeeper distrkeeper.Keeper
 
-	GovKeeper             *govkeeper.Keeper // Gov Keeper must be a pointer in the app, so we can SetRouter on it correctly
-	ParamsKeeper          paramskeeper.Keeper
-	ConsensusParamsKeeper consensusparamkeeper.Keeper
+	GovKeeper    *govkeeper.Keeper // Gov Keeper must be a pointer in the app, so we can SetRouter on it correctly
+	ParamsKeeper paramskeeper.Keeper
 
 	// the module manager
 	MM *module.Manager
@@ -229,7 +224,6 @@ func New(
 		authtypes.StoreKey, banktypes.StoreKey, stakingtypes.StoreKey,
 		minttypes.StoreKey, distrtypes.StoreKey,
 		govtypes.StoreKey, paramstypes.StoreKey,
-		consensusparamtypes.StoreKey,
 	)
 
 	// register streaming services
@@ -256,16 +250,9 @@ func New(
 		tkeys[paramstypes.TStoreKey],
 	)
 
-	// set the BaseApp's parameter store
-	// upgradetypes.StoreKey -> maybe consensusparamtypes.StoreKey (package consensusparamtypes ("github.com/cosmos/cosmos-sdk/x/consensus/types")
-	app.ConsensusParamsKeeper = consensusparamkeeper.NewKeeper(
-		appCodec,
-		runtime.NewKVStoreService(keys[consensusparamtypes.StoreKey]),
-		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		runtime.EventService{},
-	)
-
-	bApp.SetParamStore(&app.ConsensusParamsKeeper.ParamsStore)
+	// disable param store on baseapp, as consensus is handled by provider
+	// TODO: verify if we don't want to share some values
+	bApp.SetParamStore(nil)
 
 	// add keepers
 	app.AccountKeeper = authkeeper.NewAccountKeeper(
@@ -364,12 +351,10 @@ func New(
 		auth.NewAppModule(appCodec, app.AccountKeeper, nil, app.GetSubspace(authtypes.ModuleName)),
 		vesting.NewAppModule(app.AccountKeeper, app.BankKeeper),
 		bank.NewAppModule(appCodec, app.BankKeeper, app.AccountKeeper, app.GetSubspace(banktypes.ModuleName)),
-		consensus.NewAppModule(appCodec, app.ConsensusParamsKeeper),
 		gov.NewAppModule(appCodec, app.GovKeeper, app.AccountKeeper, app.BankKeeper, app.GetSubspace(govtypes.ModuleName)),
 		mint.NewAppModule(appCodec, app.MintKeeper, app.AccountKeeper, nil, app.GetSubspace(minttypes.ModuleName)),
 		distr.NewAppModule(appCodec, app.DistrKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper, app.GetSubspace(distrtypes.ModuleName)),
 		staking.NewAppModule(appCodec, app.StakingKeeper, app.AccountKeeper, app.BankKeeper, app.GetSubspace(stakingtypes.ModuleName)),
-
 		params.NewAppModule(app.ParamsKeeper),
 	)
 
@@ -455,7 +440,6 @@ func New(
 		genutiltypes.ModuleName,
 		paramstypes.ModuleName,
 		vestingtypes.ModuleName,
-		consensusparamtypes.ModuleName,
 	)
 
 	app.configurator = module.NewConfigurator(app.appCodec, app.MsgServiceRouter(), app.GRPCQueryRouter())
