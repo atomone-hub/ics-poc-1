@@ -79,10 +79,10 @@ type Multiplexer struct {
 	initializedConsumerChains map[string]bool
 	// activeChains tracks the list of active chains from the provider module
 	activeChains map[string]bool
-	// providerValidators stores the validators from the provider's InitChain response for use with consumer chains
-	providerValidators []abci.ValidatorUpdate
-	// providerConsensusParams stores the initial consensus params from the provider's InitChain for use with consumer chains
-	providerConsensusParams *cmtproto.ConsensusParams
+	// providerGenesisValidators stores the validators from the provider's InitChain response for use with consumer chains
+	providerGenesisValidators []abci.ValidatorUpdate
+	// providerGenesisConsensusParams stores the initial consensus params from the provider's InitChain for use with consumer chains
+	providerGenesisConsensusParams *cmtproto.ConsensusParams
 	// cmNode is the comet node which has been created (of the provider chain).
 	cmNode *node.Node
 	// ctx is the context which is passed to the comet, grpc and api server starting functions.
@@ -192,7 +192,7 @@ func (m *Multiplexer) startNativeProvider() error {
 // loadGenesisValues loads validators and consensus params from the genesis document.
 func (m *Multiplexer) loadGenesisValues() error {
 	// skip fetching if we have data
-	if len(m.providerValidators) != 0 && m.providerConsensusParams != nil {
+	if len(m.providerGenesisValidators) != 0 && m.providerGenesisConsensusParams != nil {
 		return nil
 	}
 
@@ -204,20 +204,20 @@ func (m *Multiplexer) loadGenesisValues() error {
 
 	// Convert genesis validators to ABCI validator updates as fallback
 	// These will be overwritten by the provider's InitChain response validators
-	m.providerValidators = make([]abci.ValidatorUpdate, 0, len(genDoc.Validators))
+	m.providerGenesisValidators = make([]abci.ValidatorUpdate, 0, len(genDoc.Validators))
 	for _, val := range genDoc.Validators {
 		pubKey, err := encoding.PubKeyToProto(val.PubKey)
 		if err != nil {
 			return fmt.Errorf("failed to convert validator pubkey: %w", err)
 		}
-		m.providerValidators = append(m.providerValidators, abci.ValidatorUpdate{
+		m.providerGenesisValidators = append(m.providerGenesisValidators, abci.ValidatorUpdate{
 			PubKey: pubKey,
 			Power:  val.Power,
 		})
 	}
 
 	consensusParams := genDoc.ConsensusParams.ToProto()
-	m.providerConsensusParams = &consensusParams
+	m.providerGenesisConsensusParams = &consensusParams
 
 	return nil
 }
@@ -524,19 +524,6 @@ func (m *Multiplexer) getActiveChainIDsFromProvider(ctx context.Context) ([]stri
 	return activeChainIDs, nil
 }
 
-// validateActiveChains checks that all active chains have corresponding handlers
-func (m *Multiplexer) validateActiveChains() {
-	for chainID := range m.activeChains {
-		if _, exists := m.chainHandlers[chainID]; !exists {
-			m.logger.Error(
-				"Active consumer chain missing from validator configuration",
-				"chain_id", chainID,
-				"error", "chain not found in chainHandlers",
-			)
-		}
-	}
-}
-
 // initChainIfNeeded initializes a chain if it hasn't been initialized yet.
 // Checks chain state via Info to detect already-initialized chains after restart.
 func (m *Multiplexer) initChainIfNeeded(chainID string, height int64, blockTime time.Time) ([]byte, error) {
@@ -568,8 +555,8 @@ func (m *Multiplexer) initChainIfNeeded(chainID string, height int64, blockTime 
 	initReq := &abci.RequestInitChain{
 		Time:            blockTime,
 		ChainId:         chainID,
-		ConsensusParams: m.providerConsensusParams,
-		Validators:      m.providerValidators,
+		ConsensusParams: m.providerGenesisConsensusParams,
+		Validators:      m.providerGenesisValidators,
 		AppStateBytes:   appState,
 		InitialHeight:   height,
 	}

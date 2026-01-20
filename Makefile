@@ -51,6 +51,8 @@ consumer-start: build
 	$(consumerd) genesis add-genesis-account val 1000000000000uatone --chain-id consumer-localnet
 	$(consumerd) keys add user
 	$(consumerd) genesis add-genesis-account user 1000000000uatone --chain-id consumer-localnet
+	$(consumerd) genesis gentx val 1000000000uatone # todo this should not be needed
+	$(consumerd) genesis collect-gentxs
 
 	# Set validator gas prices
 	sed -i.bak 's#^minimum-gas-prices = .*#minimum-gas-prices = "0.01uatone,0.01uphoton"#g' $(consumer_home)/config/app.toml
