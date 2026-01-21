@@ -26,6 +26,7 @@ const (
 type chain struct {
 	dataDir          string
 	id               string
+	binary           string
 	validators       []*validator
 	accounts         []*account //nolint:unused
 	multiSigAccounts []*multiSigAccount
@@ -52,6 +53,7 @@ func newProviderChain() (*chain, error) {
 		dataDir:  tmpDir,
 		cdc:      tempApp.AppCodec(),
 		txConfig: tempApp.GetTxConfig(),
+		binary:   "provider",
 	}, nil
 }
 
@@ -67,6 +69,7 @@ func newConsumerChain() (*chain, error) {
 		dataDir:  tmpDir,
 		cdc:      tempApp.AppCodec(),
 		txConfig: tempApp.GetTxConfig(),
+		binary:   "consumer",
 	}, nil
 }
 

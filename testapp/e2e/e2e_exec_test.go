@@ -68,19 +68,21 @@ func (s *IntegrationTestSuite) execEncode(
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
-	s.T().Logf("%s - Executing atomoned encoding with %v", c.id, txPath)
-	atomoneCommand := []string{
-		providerBinary,
+	binary := c.binary
+
+	s.T().Logf("%s - Executing %s encoding with %v",binary, c.id, txPath)
+	command := []string{
+		binary,
 		txCommand,
 		"encode",
 		txPath,
 	}
 	for flag, value := range opts {
-		atomoneCommand = append(atomoneCommand, fmt.Sprintf("--%s=%v", flag, value))
+		command = append(command, fmt.Sprintf("--%s=%v", flag, value))
 	}
 
 	var encoded string
-	s.executeTxCommand(ctx, c, atomoneCommand, 0, func(stdOut []byte, stdErr []byte) error {
+	s.executeTxCommand(ctx, c, command, 0, func(stdOut []byte, stdErr []byte) error {
 		if stdErr != nil {
 			return fmt.Errorf("stdErr: %s", string(stdErr))
 		}
@@ -100,19 +102,21 @@ func (s *IntegrationTestSuite) execDecode(
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
-	s.T().Logf("%s - Executing atomoned decoding with %v", c.id, txPath)
-	atomoneCommand := []string{
-		providerBinary,
+	binary := c.binary
+
+	s.T().Logf("%s - Executing %s encoding with %v",binary, c.id, txPath)
+	command := []string{
+		binary,
 		txCommand,
 		"decode",
 		txPath,
 	}
 	for flag, value := range opts {
-		atomoneCommand = append(atomoneCommand, fmt.Sprintf("--%s=%v", flag, value))
+		command = append(command, fmt.Sprintf("--%s=%v", flag, value))
 	}
 
 	var decoded string
-	s.executeTxCommand(ctx, c, atomoneCommand, 0, func(stdOut []byte, stdErr []byte) error {
+	s.executeTxCommand(ctx, c, command, 0, func(stdOut []byte, stdErr []byte) error {
 		if stdErr != nil {
 			return fmt.Errorf("stderr=%s", stdErr)
 		}
@@ -123,7 +127,7 @@ func (s *IntegrationTestSuite) execDecode(
 	return decoded
 }
 
-func (s *IntegrationTestSuite) executeTxCommand(ctx context.Context, c *chain, atomoneCommand []string, valIdx int, validation func([]byte, []byte) error) int {
+func (s *IntegrationTestSuite) executeTxCommand(ctx context.Context, c *chain, command []string, valIdx int, validation func([]byte, []byte) error) int {
 	if validation == nil {
 		validation = s.defaultExecValidation(s.provider, 0, nil)
 	}
@@ -137,7 +141,7 @@ func (s *IntegrationTestSuite) executeTxCommand(ctx context.Context, c *chain, a
 		AttachStderr: true,
 		Container:    s.valResources[c.id][valIdx].Container.ID,
 		User:         "nonroot",
-		Cmd:          atomoneCommand,
+		Cmd:          command,
 	})
 	s.Require().NoError(err)
 
@@ -215,10 +219,11 @@ func (s *IntegrationTestSuite) execBankSend(
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
+	binary := c.binary
 	s.T().Logf("sending %s tokens from %s to %s on chain %s", amt, from, to, c.id)
 
-	atomoneCommand := []string{
-		providerBinary,
+	command := []string{
+		binary,
 		txCommand,
 		banktypes.ModuleName,
 		"send",
@@ -228,10 +233,10 @@ func (s *IntegrationTestSuite) execBankSend(
 		"-y",
 	}
 	for flag, value := range opts {
-		atomoneCommand = append(atomoneCommand, fmt.Sprintf("--%s=%v", flag, value))
+		command = append(command, fmt.Sprintf("--%s=%v", flag, value))
 	}
 
-	s.executeTxCommand(ctx, c, atomoneCommand, valIdx, s.expectErrExecValidation(c, valIdx, expectErr))
+	s.executeTxCommand(ctx, c, command, valIdx, s.expectErrExecValidation(c, valIdx, expectErr))
 }
 
 func (s *IntegrationTestSuite) execBankMultiSend(
@@ -256,20 +261,21 @@ func (s *IntegrationTestSuite) execBankMultiSend(
 		s.T().Logf("sending %s tokens from %s to %d accounts on chain %s", amt, from, len(to), c.id)
 	}
 
-	atomoneCommand := []string{
-		providerBinary,
+	binary := c.binary
+	command := []string{
+		binary,
 		txCommand,
 		banktypes.ModuleName,
 		"multi-send",
 		from,
 	}
 
-	atomoneCommand = append(atomoneCommand, to...)
-	atomoneCommand = append(atomoneCommand, amt, "-y")
+	command = append(command, to...)
+	command = append(command, amt, "-y")
 
 	for flag, value := range opts {
-		atomoneCommand = append(atomoneCommand, fmt.Sprintf("--%s=%v", flag, value))
+		command = append(command, fmt.Sprintf("--%s=%v", flag, value))
 	}
 
-	return s.executeTxCommand(ctx, c, atomoneCommand, valIdx, s.expectErrExecValidation(c, valIdx, expectErr))
+	return s.executeTxCommand(ctx, c, command, valIdx, s.expectErrExecValidation(c, valIdx, expectErr))
 }

@@ -1,7 +1,7 @@
 ARG GO_VERSION
 ARG IMG_TAG=latest
 
-# Compile the atomoned binary
+# Compile provider and consumer binaries
 FROM golang:$GO_VERSION-alpine AS testapp-builder
 RUN apk add --no-cache git openssh ca-certificates
 WORKDIR /src/app/

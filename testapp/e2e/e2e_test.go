@@ -3,7 +3,6 @@ package e2e
 
 var (
 	runBankTest                   = true
-
 )
 
 func (s *IntegrationTestSuite) TestBank() {

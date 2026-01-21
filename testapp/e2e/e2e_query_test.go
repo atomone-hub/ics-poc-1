@@ -24,7 +24,7 @@ func (s *IntegrationTestSuite) waitTx(endpoint, txHash string, msgResp codec.Pro
 }
 
 
-// queryAtomOneTx returns an error if the tx is not found or is failed.
+// queryTx returns an error if the tx is not found or is failed.
 func (s *IntegrationTestSuite) queryTx(endpoint, txHash string, msgResp codec.ProtoMarshaler) (height int, err error) {
 	body, err := httpGet(fmt.Sprintf("%s/cosmos/tx/v1beta1/txs/%s", endpoint, txHash))
 	if err != nil {

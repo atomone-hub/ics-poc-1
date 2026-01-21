@@ -42,39 +42,21 @@ import (
 
 const (
 	providerBinary               = "provider"
+	consumerBinary               = "consumer"
 	txCommand                    = "tx"
-	queryCommand                 = "query"
-	keysCommand                  = "keys"
 	providerHomePath              = "/home/nonroot/.ics-provider"
 	consumerHomePath              = "/home/nonroot/.ics-consumer"
 	uatoneDenom                  = "uatone"
 	minGasPrice                  = "0.00001"
 	gas                          = 200000
-	govProposalBlockBuffer int64 = 35
-	relayerAccountIndex          = 0
-	numberOfEvidences            = 10
 	slashingShares         int64 = 10000
 
-	proposalBypassMsgFilename             = "proposal_bypass_msg.json"
-	proposalMaxTotalBypassFilename        = "proposal_max_total_bypass.json"
-	proposalCommunitySpendFilename        = "proposal_community_spend.json"
-	proposalSoftwareUpgradeFilename       = "proposal_software_upgrade.json"
-	proposalCancelUpgradeFilename         = "proposal_cancel_uprade.json"
-	proposalParamChangeFilename           = "param_change.json"
-	proposalTextFilename                  = "proposal_text.json"
-	proposalConstitutionAmendmentFilename = "constitution_amendment.json"
-	proposalLawFilename                   = "proposal_law.json"
-	newConstitutionFilename               = "new_constitution.md"
 	jailedValidatorKey = "jailed"
 
-	hermesBinary              = "hermes"
-	hermesConfigWithGasPrices = "/root/.hermes/config.toml"
-	hermesConfigNoGasPrices   = "/root/.hermes/config-zero.toml"
 )
 
 var (
 	runInCI           = os.Getenv("GITHUB_ACTIONS") == "true"
-	atomoneConfigPath = filepath.Join(providerHomePath, "config")
 	initBalance       = sdk.NewCoins(
 		sdk.NewInt64Coin(uatoneDenom, 10_000_000_000_000), // 10,000,000atone
 	)
@@ -82,7 +64,6 @@ var (
 	stakingAmountCoin = sdk.NewInt64Coin(uatoneDenom, 6_000_000_000_000) // 6,000,000atone
 	tokenAmount       = sdk.NewInt64Coin(uatoneDenom, 100_000_000)       // 100atone
 	standardFees      = sdk.NewInt64Coin(uatoneDenom, 330_000)          // 0.33photon
-	proposalCounter   = 0
 )
 
 type IntegrationTestSuite struct {
@@ -93,8 +74,6 @@ type IntegrationTestSuite struct {
 	consumer          *chain
 	dkrPool           *dockertest.Pool
 	dkrNet            *dockertest.Network
-	hermesResource    *dockertest.Resource
-	tsRelayerResource *dockertest.Resource
 
 	// chain config
 	cdc      codec.Codec
@@ -184,7 +163,7 @@ func (s *IntegrationTestSuite) SetupSuite() {
 
 
 func (s *IntegrationTestSuite) TearDownSuite() {
-	if str := os.Getenv("ICS_E2E_SKIP_CLEANUP"); len(str) > 0 || true {
+	if str := os.Getenv("ICS_E2E_SKIP_CLEANUP"); len(str) > 0 {
 		skipCleanup, err := strconv.ParseBool(str)
 		s.Require().NoError(err)
 
@@ -246,12 +225,8 @@ func (s *IntegrationTestSuite) initNodes(c *chain) {
 	}else{
 		s.Require().NoError(c.createAndInitValidators(1))
 	}
-	/* Adding 4 accounts to val0 local directory
-	c.genesisAccounts[0]: Relayer Account
-	c.genesisAccounts[1]: ICA Owner
-	c.genesisAccounts[2]: Test Account 1
-	c.genesisAccounts[3]: Test Account 2
-	*/
+	// Adding 4 accounts to val0 local directory
+	
 	s.Require().NoError(c.addAccountFromMnemonic(7))
 	s.Require().NoError(c.addMultiSigAccountFromMnemonic(2, 3, 2))
 	// Initialize a genesis file for the first validator
@@ -686,24 +661,6 @@ func (s *IntegrationTestSuite) saveChainLogs(c *chain) {
 	})
 	if err == nil {
 		s.T().Logf("See chain %s log file %s", c.id, f.Name())
-	}
-}
-
-func (s *IntegrationTestSuite) saveTsRelayerLogs() {
-	f, err := os.CreateTemp("", "ts-relayer")
-	if err != nil {
-		s.T().Fatal(err)
-	}
-	defer f.Close()
-	err = s.dkrPool.Client.Logs(docker.LogsOptions{
-		Container:    s.tsRelayerResource.Container.ID,
-		OutputStream: f,
-		ErrorStream:  f,
-		Stdout:       true,
-		Stderr:       true,
-	})
-	if err == nil {
-		s.T().Logf("See ts-relayer log file %s", f.Name())
 	}
 }
 
